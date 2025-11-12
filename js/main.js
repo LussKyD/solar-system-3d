@@ -1,10 +1,10 @@
 // --- Global Constants ---
 
 // Conversion factors
-const AU_TO_LY = 0.000015813; // 1 AU is approx 0.000015813 Light Years
-const EARTH_DISTANCE_SU = 8.0; // Earth's distance in Scene Units (SU) - used for scaling
+const AU_TO_LY = 0.000015813; 
+const EARTH_DISTANCE_SU = 8.0; 
 
-// Data for the entire solar system (Scaled for screen visibility)
+// The Sun's data
 const SUN_DATA = {
     name: "The Sun", type: 'Star', radius: 1.5, color: 0xFFA500, texture: 'textures/sun.jpg', distanceAU: 0, info: "The center of our solar system." 
 };
@@ -13,38 +13,38 @@ const SUN_DATA = {
 const PLANETS = [
     { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
     { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
-    { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg' },
+    // NOTE: hasClouds is set to false as 'earth_clouds.png' is not in the uploaded list.
+    { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
     { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
-    // Gas Giants distances are severely compressed to fit: Jupiter=25, Saturn=35, Uranus=45, Neptune=55
     { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
     { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
     { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
     { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
 ];
 
-// Data for Moons, grouped by parent planet name
+// Data for Moons: Only Earth's moon has a texture property, the rest use placeholders.
 const MOON_SYSTEMS = {
     "Earth": [
         { name: "Moon", radius: 0.15, distance: 1.5, orbitSpeed: 0.05, selfRotateSpeed: 0.015, texture: 'textures/moon.jpg', info: "Earth's only natural satellite." }
     ],
     "Mars": [
-        { name: "Phobos", radius: 0.08, distance: 0.5, orbitSpeed: 0.1, selfRotateSpeed: 0.05, texture: 'textures/phobos.jpg', info: "Inner, fast-orbiting moon." },
-        { name: "Deimos", radius: 0.05, distance: 0.9, orbitSpeed: 0.05, selfRotateSpeed: 0.03, texture: 'textures/deimos.jpg', info: "Outer, potato-shaped moon." }
+        { name: "Phobos", radius: 0.08, distance: 0.5, orbitSpeed: 0.1, selfRotateSpeed: 0.05, info: "Inner, fast-orbiting moon." }, 
+        { name: "Deimos", radius: 0.05, distance: 0.9, orbitSpeed: 0.05, selfRotateSpeed: 0.03, info: "Outer, potato-shaped moon." }
     ],
     "Jupiter": [
-        { name: "Io", radius: 0.25, distance: 2.0, orbitSpeed: 0.03, selfRotateSpeed: 0.01, texture: 'textures/io.jpg', info: "Volcanically active." },
-        { name: "Europa", radius: 0.2, distance: 3.0, orbitSpeed: 0.02, selfRotateSpeed: 0.008, texture: 'textures/europa.jpg', info: "Icy, possible sub-surface ocean." },
-        { name: "Ganymede", radius: 0.35, distance: 4.5, orbitSpeed: 0.015, selfRotateSpeed: 0.006, texture: 'textures/ganymede.jpg', info: "Largest moon in solar system." }
+        { name: "Io", radius: 0.25, distance: 2.0, orbitSpeed: 0.03, selfRotateSpeed: 0.01, info: "Volcanically active." },
+        { name: "Europa", radius: 0.2, distance: 3.0, orbitSpeed: 0.02, selfRotateSpeed: 0.008, info: "Icy, possible sub-surface ocean." },
+        { name: "Ganymede", radius: 0.35, distance: 4.5, orbitSpeed: 0.015, selfRotateSpeed: 0.006, info: "Largest moon in solar system." }
     ],
     "Saturn": [
-        { name: "Titan", radius: 0.45, distance: 3.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, texture: 'textures/titan.jpg', info: "Hazy atmosphere, largest moon." },
-        { name: "Rhea", radius: 0.2, distance: 4.5, orbitSpeed: 0.008, selfRotateSpeed: 0.004, info: "Second largest moon." } // Placeholder
+        { name: "Titan", radius: 0.45, distance: 3.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Hazy atmosphere, largest moon." },
+        { name: "Rhea", radius: 0.2, distance: 4.5, orbitSpeed: 0.008, selfRotateSpeed: 0.004, info: "Second largest moon." } 
     ],
     "Uranus": [
-        { name: "Titania", radius: 0.2, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Largest moon of Uranus." } // Placeholder
+        { name: "Titania", radius: 0.2, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Largest moon of Uranus." } 
     ],
     "Neptune": [
-        { name: "Triton", radius: 0.25, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Retrograde orbit." } // Placeholder
+        { name: "Triton", radius: 0.25, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Retrograde orbit." } 
     ]
 };
 
@@ -58,7 +58,7 @@ let selectedBody = null;
 const selectableObjects = []; 
 const orbitalBodies = []; 
 const selectionDisplay = document.getElementById('selection-display');
-const textureLoader = new THREE.TextureLoader(); // Loader for textures
+const textureLoader = new THREE.TextureLoader(); 
 
 
 // --- 1. SETUP ---
@@ -70,7 +70,6 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// We need to zoom WAY out now!
 camera.position.z = 70; 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -87,11 +86,9 @@ scene.add(pointLight);
 
 // --- 2. UTILITY FUNCTIONS ---
 
-// Calculates distance from Sun (given in AU) and Earth (derived)
 function calculateDistanceInfo(data) {
     const distLY_Sun = data.distanceAU * AU_TO_LY;
     
-    // Calculate distance from Earth: based on current position relative to Earth's distance
     const earthAU = 1.0; 
     const distanceAUFromEarth = Math.abs(data.distanceAU - earthAU);
     const distLY_Earth = distanceAUFromEarth * AU_TO_LY;
@@ -100,7 +97,6 @@ function calculateDistanceInfo(data) {
     let earthDistText = `${distLY_Earth.toPrecision(5)} LY (approx)`;
 
     if (data.type === 'Moon') {
-        // Moons use parent planet's AU, and are too close to Earth for practical LY distance
         const parentDistLY = data.parentAU * AU_TO_LY;
         sunDistText = `${data.parentAU} AU (approx) / ${parentDistLY.toPrecision(5)} LY`;
         earthDistText = "Too close to Earth to measure in Light Years.";
@@ -146,23 +142,23 @@ function createOrbitLine(distance) {
     scene.add(orbitRing);
 }
 
-// Function to create a planet, moon, or sun with texture
+// FIX: Graceful Texture Loading (No more 404s for missing moon textures!)
 function createTexturedBody(data, isSun = false) {
     const geometry = new THREE.SphereGeometry(data.radius, 32, 32);
     
     let material;
-    try {
-        if (isSun) {
-            material = new THREE.MeshBasicMaterial({ map: textureLoader.load(data.texture) });
-        } else if (data.texture) {
-            material = new THREE.MeshStandardMaterial({ map: textureLoader.load(data.texture) }); 
-        } else {
-            // Placeholder for moons without texture
-            material = new THREE.MeshStandardMaterial({ color: data.color || 0xAAAAAA }); 
-        }
-    } catch (e) {
-        console.warn(`Could not load texture for ${data.name}. Falling back to solid color.`);
-        material = new THREE.MeshStandardMaterial({ color: data.color || 0xAAAAAA });
+    
+    if (isSun) {
+        // Sun: Always uses BasicMaterial + Texture
+        material = new THREE.MeshBasicMaterial({ map: textureLoader.load(data.texture) });
+    } else if (data.texture) {
+        // Planet/Moon with Texture: Uses StandardMaterial + Texture
+        material = new THREE.MeshStandardMaterial({ 
+            map: textureLoader.load(data.texture), 
+        }); 
+    } else {
+        // Fallback: Moon without texture uses a solid color
+        material = new THREE.MeshStandardMaterial({ color: data.color || 0xAAAAAA }); 
     }
     
     const body = new THREE.Mesh(geometry, material);
@@ -181,35 +177,30 @@ function createTexturedBody(data, isSun = false) {
     return body;
 }
 
-// Function to add Saturn's Rings (or any other ring system)
 function createRings(planetMesh, texturePath) {
-    // Ring parameters (relative to Saturn's radius=1.0)
+    // Note: texturePath is 'textures/saturn_ring.jpg' from your list
     const innerRadius = 1.5; 
     const outerRadius = 2.5;
     const segments = 64; 
 
     const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, segments);
     
-    // Create a texture material for the rings
     const ringTexture = textureLoader.load(texturePath);
     const ringMaterial = new THREE.MeshBasicMaterial({
         map: ringTexture,
-        side: THREE.DoubleSide, // Ensure it's visible from both sides
-        transparent: true,      // Allows for the dark areas to be see-through
-        opacity: 0.7            // Slight transparency
+        side: THREE.DoubleSide,
+        transparent: true,      
+        opacity: 0.7            
     });
 
     const rings = new THREE.Mesh(ringGeometry, ringMaterial);
     
-    // Rotate 90 degrees to lay flat and tilt slightly
     rings.rotation.x = Math.PI / 2; 
-    rings.rotation.y = Math.PI / 8; // Slight tilt
+    rings.rotation.y = Math.PI / 8;
     
-    planetMesh.add(rings); // Rings are attached to the planet mesh
-}
+    planetMesh.add(rings); }
 
 
-// Function to display the information of the selected body
 function displayBodyInfo(data) {
     const { sunDistText, earthDistText } = calculateDistanceInfo(data);
     
@@ -253,10 +244,11 @@ PLANETS.forEach(planetData => {
     
     // 4. Add Rings (if applicable)
     if (planetData.hasRings) {
-        createRings(planet, 'textures/saturn_ring.jpg'); [attachment_0](attachment)
+        // Uses the 'saturn_ring.jpg' from your uploaded list
+        createRings(planet, 'textures/saturn_ring.jpg');
     }
-    
-    // 5. Store for Animation
+
+    // 5. Store Planet for Animation
     orbitalBodies.push({
         name: planetData.name,
         mesh: planet, 
@@ -269,23 +261,22 @@ PLANETS.forEach(planetData => {
     const moons = MOON_SYSTEMS[planetData.name];
     if (moons) {
         moons.forEach(moonData => {
-            // Create the Moon Mesh (using combined data)
             const combinedData = {
                 ...moonData,
                 type: 'Moon',
                 parentName: planetData.name,
                 parentAU: planetData.distanceAU, 
-                distanceAU: planetData.distanceAU // Moons are effectively same distance from Sun as planet
+                distanceAU: planetData.distanceAU
             };
+            // This function now correctly uses the texture if provided (Earth's Moon), 
+            // or a solid gray color if no texture property exists (all others).
             const moon = createTexturedBody(combinedData);
             
-            // Create the Moon's Orbit Group (orbits the planet mesh)
             const moonOrbitGroup = new THREE.Object3D();
             moonOrbitGroup.add(moon); 
             moon.position.x = moonData.distance;
-            planet.add(moonOrbitGroup); // Add to the planet's mesh
+            planet.add(moonOrbitGroup); 
             
-            // Store for Animation
             orbitalBodies.push({
                 name: moonData.name,
                 mesh: moon,
@@ -311,14 +302,14 @@ for (let i = 0; i < asteroidCount; i++) {
     const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
     
     asteroid.position.x = distance; 
-    asteroid.position.z = (Math.random() - 0.5) * 1.5; // Wider scatter
+    asteroid.position.z = (Math.random() - 0.5) * 1.5; 
     asteroid.position.y = (Math.random() - 0.5) * 1.5;
     
     const asteroidOrbit = new THREE.Object3D();
     asteroidOrbit.rotation.y = Math.random() * Math.PI * 2;
+    asteroidOrbit.add(asteroid);
     scene.add(asteroidOrbit);
 
-    // Speed scaled down to fit belt's orbit, non-selectable
     orbitalBodies.push({
         name: `Asteroid ${i}`,
         mesh: asteroid,
@@ -328,7 +319,7 @@ for (let i = 0; i < asteroidCount; i++) {
     });
 }
 
-// 3d. Kuiper Belt (Beyond Neptune) - Simple representation
+// 3d. Kuiper Belt (Beyond Neptune)
 const kuiperCount = 500;
 const kuiperMinDist = 60.0;
 const kuiperMaxDist = 150.0;
@@ -346,9 +337,9 @@ for (let i = 0; i < kuiperCount; i++) {
     
     const kuiperOrbit = new THREE.Object3D();
     kuiperOrbit.rotation.y = Math.random() * Math.PI * 2;
+    kuiperOrbit.add(kuiper);
     scene.add(kuiperOrbit);
 
-    // Very slow orbit
     orbitalBodies.push({
         name: `Kuiper Obj ${i}`,
         mesh: kuiper,
@@ -368,7 +359,7 @@ function animate() {
 
     orbitalBodies.forEach(body => {
         body.group.rotation.y += body.orbitSpeed; 
-        if (body.selfRotateSpeed > 0) {
+        if (body.mesh) {
             body.mesh.rotation.y += body.selfRotateSpeed;
         }
     });
