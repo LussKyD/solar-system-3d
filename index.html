@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Solar System Traveler</title>
+    <!-- Link to our styles -->
     <link rel="stylesheet" href="css/style.css"> 
 </head>
 <body>
@@ -11,11 +12,16 @@
     <div id="info-panel">
         <h1>Welcome, Space Traveler!</h1>
         <p>Use your **Mouse/Trackpad** to orbit and explore the inner planets!</p>
+        <!-- Dedicated line for displaying selected body name -->
+        <p id="selection-display">Hover over a planet!</p>
     </div>
 
+    <!-- Include the Three.js library from a CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Include OrbitControls for easy navigation -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
+    <!-- Link to our main JavaScript file -->
     <script src="js/main.js"></script>
 </body>
 </html>
