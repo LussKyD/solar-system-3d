@@ -13,11 +13,9 @@ const SUN_DATA = {
 const PLANETS = [
     { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
     { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
-    // Earth uses 'earth.jpg'
     { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
     { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
     { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
-    // Saturn uses 'saturn.jpg' and 'saturn_ring.jpg'
     { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
     { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
     { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
@@ -327,6 +325,7 @@ for (let i = 0; i < asteroidCount; i++) {
     asteroidOrbit.add(asteroid);
     scene.add(asteroidOrbit);
 
+    // FIX: Ensure mesh is the asteroid, and group is the orbit.
     orbitalBodies.push({
         name: `Asteroid ${i}`,
         mesh: asteroid,
@@ -357,6 +356,7 @@ for (let i = 0; i < kuiperCount; i++) {
     kuiperOrbit.add(kuiper);
     scene.add(kuiperOrbit);
 
+    // FIX: Ensure mesh is the kuiper object, and group is the orbit.
     orbitalBodies.push({
         name: `Kuiper Obj ${i}`,
         mesh: kuiper,
@@ -374,12 +374,14 @@ function animate() {
 
     sun.rotation.y += 0.001; 
 
-    // FINAL FIX: Cleaned up the loop structure to ensure body.group and body.mesh are always valid.
+    // FINAL FINAL FIX: Added checks to ensure 'body' object is fully structured before accessing properties.
     orbitalBodies.forEach(body => {
-        if (body.group) {
+        // Only attempt to rotate the group (orbit) if the group exists
+        if (body && body.group) {
             body.group.rotation.y += body.orbitSpeed; 
         }
-        if (body.mesh) {
+        // Only attempt to rotate the mesh (self-rotation) if the mesh exists
+        if (body && body.mesh) {
             body.mesh.rotation.y += body.selfRotateSpeed;
         }
     });
