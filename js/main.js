@@ -1,28 +1,37 @@
-// Global variables for interaction
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let currentIntersected = null; 
-const selectableObjects = []; 
-const orbitalBodies = []; 
-const selectionDisplay = document.getElementById('selection-display');
+// --- Global Constants ---
 
-// NEW: Variable to hold the currently clicked/locked body
-let selectedBody = null; 
+// Conversion factor: 1 AU (Astronomical Unit) is approx 0.000015813 Light Years
+const AU_TO_LY = 0.000015813;
+const EARTH_DISTANCE_SU = 8.0; // Earth's arbitrary distance in Scene Units (SU)
 
-// Data for the inner solar system planets
+// Data structure now includes texture path and distance in AU
 const PLANETS = [
-    // distance is in arbitrary scene units (SU); distanceAU is for display
-    { name: "Mercury", radius: 0.2, color: 0xAAAAAA, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39 },
-    { name: "Venus", radius: 0.4, color: 0xCC7722, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72 },
-    { name: "Earth", radius: 0.5, color: 0x0000FF, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00 },
+    { name: "Mercury", radius: 0.2, color: 0xAAAAAA, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
+    { name: "Venus", radius: 0.4, color: 0xCC7722, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
+    { name: "Earth", radius: 0.5, color: 0x0000FF, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg' },
 ];
 
 const MOON_DATA = { 
     name: "Moon", radius: 0.15, color: 0xCCCCCC, 
     distance: 1.5, orbitSpeed: 0.05, selfRotateSpeed: 0.015,
-    info: "Orbits Earth at 384,400 km" 
+    info: "Orbits Earth at 384,400 km", 
+    texture: 'textures/moon.jpg' // Moon now has a texture
 };
 
+const SUN_DATA = {
+    name: "The Sun", type: 'Star', radius: 1.5, color: 0xFFA500, texture: 'textures/sun.jpg', distanceAU: 0, info: "The center of our solar system." 
+};
+
+// --- Global Variables for Three.js and Interaction ---
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let currentIntersected = null; 
+let selectedBody = null; 
+
+const selectableObjects = []; 
+const orbitalBodies = []; 
+const selectionDisplay = document.getElementById('selection-display');
+const textureLoader = new THREE.TextureLoader(); // New loader for textures
 
 // --- 1. SETUP ---
 
@@ -33,13 +42,12 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Set camera position and add interactive controls
 camera.position.z = 20; 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
-// Lighting (Sun is the primary light source)
+// Lighting
 const ambientLight = new THREE.AmbientLight(0x333333); 
 scene.add(ambientLight);
 
@@ -50,7 +58,26 @@ scene.add(pointLight);
 
 // --- 2. UTILITY FUNCTIONS ---
 
-// Creates a realistic Starfield background (random, not actual)
+// Calculates distance from Earth in Light Years for display
+function calculateDistanceToEarth(distanceSU, targetAU) {
+    // 1. Calculate distance from Sun in Scene Units (SU)
+    const earthSU = EARTH_DISTANCE_SU; 
+    const targetSU = distanceSU;
+
+    // 2. Simple calculation (assumes all planets are in a line, which is false, but okay for a model)
+    const distanceToEarthSU = Math.abs(targetSU - earthSU);
+
+    // 3. Convert that Scene Unit difference back to AU
+    const earthAU = 1.0; 
+    const distanceAU = Math.abs(targetAU - earthAU);
+
+    // 4. Convert AU distance to Light Years
+    const distanceLY = distanceAU * AU_TO_LY;
+    
+    return distanceLY.toPrecision(5); // Show 5 significant figures
+}
+
+
 function createStarfield() {
     const starGeometry = new THREE.BufferGeometry();
     const starCount = 15000;
@@ -73,7 +100,6 @@ function createStarfield() {
     scene.add(starMesh);
 }
 
-// Creates the imaginary orbit path (circle/ring)
 function createOrbitLine(distance) {
     const tubeRadius = 0.005; 
     const radialSegments = 128; 
@@ -86,28 +112,34 @@ function createOrbitLine(distance) {
     scene.add(orbitRing);
 }
 
-// Function to create a single planet and its orbital group
-function createPlanetBody(data) {
+// Updated function to handle textures
+function createTexturedBody(data, isSun = false) {
     const geometry = new THREE.SphereGeometry(data.radius, 32, 32);
-    const material = new THREE.MeshStandardMaterial({ color: data.color }); 
-    const planet = new THREE.Mesh(geometry, material);
     
-    planet.userData = { 
+    let material;
+    if (isSun) {
+        // Sun uses basic material and its own texture
+        material = new THREE.MeshBasicMaterial({ map: textureLoader.load(data.texture) });
+    } else {
+        // Planets use standard material to react to the light
+        material = new THREE.MeshStandardMaterial({ 
+            map: textureLoader.load(data.texture), 
+        }); 
+    }
+    
+    const body = new THREE.Mesh(geometry, material);
+    
+    // Store data for selection display
+    body.userData = { 
         name: data.name, 
-        type: 'Planet',
+        type: data.type || 'Planet',
         distanceAU: data.distanceAU,
-        distanceFromSun: data.distance 
+        distanceSU: data.distance || 0,
+        radius: data.radius
     }; 
-    selectableObjects.push(planet);
-
-    const orbitGroup = new THREE.Object3D();
-    planet.position.x = data.distance;
-    orbitGroup.add(planet);
-    scene.add(orbitGroup);
+    selectableObjects.push(body);
     
-    createOrbitLine(data.distance);
-
-    return { planet, orbitGroup }; 
+    return body;
 }
 
 // Function to display the information of the selected body (Used by both hover and click)
@@ -117,10 +149,17 @@ function displayBodyInfo(data) {
     if (data.type === 'Star') {
         infoText += `<br>Location: ${data.info}`;
     } else if (data.type === 'Moon') {
+        // Moons have their own orbit info
+        const distLY = calculateDistanceToEarth(data.distanceSU + EARTH_DISTANCE_SU, 1.0); // Moon's distance from Sun in AU is roughly 1.0
         infoText += `<br>Orbiting: Earth<br>${data.info}`;
+        infoText += `<br>Distance from Earth: 0.0... Light Years`; // Too small to measure in LY
     } else if (data.type === 'Planet') {
-        infoText += `<br>Distance: ${data.distanceAU} AU (approx.)`;
-        infoText += `<br>Radius (Scene): ${data.distanceFromSun} SU`;
+        // Planets have distance from Sun (AU/LY) and Earth (LY)
+        const distLY_Sun = data.distanceAU * AU_TO_LY;
+        const distLY_Earth = calculateDistanceToEarth(data.distanceSU, data.distanceAU);
+
+        infoText += `<br>Dist. from Sun: ${data.distanceAU} AU / ${distLY_Sun.toPrecision(5)} LY`;
+        infoText += `<br>Dist. from Earth: ${distLY_Earth} LY (approx)`;
     }
 
     selectionDisplay.innerHTML = infoText;
@@ -129,20 +168,23 @@ function displayBodyInfo(data) {
 
 // --- 3. BUILD THE SOLAR SYSTEM ---
 
-// 3a. Starfield
 createStarfield();
 
-// 3b. The Sun
-const sunGeometry = new THREE.SphereGeometry(1.5, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFA500 });
-const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-sun.userData = { name: "The Sun", type: 'Star', distanceAU: 0, info: "The center of our solar system." }; 
-selectableObjects.push(sun);
+// 3a. The Sun (Now uses texture and the createTexturedBody function)
+const sun = createTexturedBody(SUN_DATA, true);
 scene.add(sun);
 
-// 3c. Inner Planets (Mercury, Venus, Earth)
+
+// 3b. Inner Planets (Mercury, Venus, Earth)
 PLANETS.forEach(data => {
-    const { planet, orbitGroup } = createPlanetBody(data);
+    const planet = createTexturedBody(data); // Planet texture/data
+    
+    const orbitGroup = new THREE.Object3D();
+    planet.position.x = data.distance;
+    orbitGroup.add(planet);
+    scene.add(orbitGroup);
+    
+    createOrbitLine(data.distance); // Orbit line
     
     orbitalBodies.push({
         name: data.name,
@@ -153,23 +195,16 @@ PLANETS.forEach(data => {
     });
 });
 
-// 3d. Earth's Moon
+// 3c. Earth's Moon (Now uses texture and is selectable)
 const earthSystem = orbitalBodies.find(b => b.name === "Earth");
 
-const moonGeometry = new THREE.SphereGeometry(MOON_DATA.radius, 32, 32);
-const moonMaterial = new THREE.MeshStandardMaterial({ color: MOON_DATA.color });
-const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-moon.userData = { 
-    name: MOON_DATA.name, 
-    type: 'Moon', 
-    info: MOON_DATA.info 
-};
-selectableObjects.push(moon);
+const moon = createTexturedBody({...MOON_DATA, type: 'Moon'}); // Moon texture/data
+moon.userData = { ...moon.userData, distanceSU: MOON_DATA.distance, distanceAU: 1.0 }; // Add distance for calculation
 
 const moonOrbitGroup = new THREE.Object3D();
 moonOrbitGroup.add(moon); 
 moon.position.x = MOON_DATA.distance;
-earthSystem.mesh.add(moonOrbitGroup); 
+earthSystem.mesh.add(moonOrbitGroup); // The moon orbits the Earth mesh
 
 orbitalBodies.push({
     name: MOON_DATA.name,
@@ -179,12 +214,13 @@ orbitalBodies.push({
     selfRotateSpeed: MOON_DATA.selfRotateSpeed
 });
 
-// 3e. Simple Inner Asteroids 
+// 3d. Simple Inner Asteroids (Non-selectable)
 const asteroidCount = 100;
 for (let i = 0; i < asteroidCount; i++) {
     const size = 0.05 + Math.random() * 0.05;
     const distance = 4.0 + Math.random() * 3.0; 
     const asteroidGeometry = new THREE.SphereGeometry(size, 8, 8);
+    // Use a simple material here, no texture needed for small rocks
     const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
     const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
     
@@ -211,10 +247,8 @@ for (let i = 0; i < asteroidCount; i++) {
 function animate() {
     requestAnimationFrame(animate);
 
-    // 1. Sun Rotation
     sun.rotation.y += 0.001; 
 
-    // 2. Apply Orbit & Self-Rotation
     orbitalBodies.forEach(body => {
         body.group.rotation.y += body.orbitSpeed; 
         if (body.selfRotateSpeed > 0) {
@@ -222,18 +256,16 @@ function animate() {
         }
     });
 
-    // 3. Handle Hover (Mousemove)
+    // Handle Hover (Mousemove)
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(selectableObjects);
 
     if (intersects.length > 0) {
         currentIntersected = intersects[0].object;
-        // If nothing is currently selected (clicked), show hover info
         if (!selectedBody) {
              displayBodyInfo(currentIntersected.userData);
         }
     } else {
-        // If mouse leaves objects and nothing is clicked, reset display
         if (!selectedBody) {
             currentIntersected = null;
             selectionDisplay.innerHTML = 'Hover over a planet or the Sun!';
@@ -254,7 +286,7 @@ window.addEventListener('mousemove', (event) => {
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }, false);
 
-// Handle mouse click for locking selection (FIXED)
+// Handle mouse click for locking selection
 window.addEventListener('click', (event) => {
     // 1. Immediately update mouse coordinates based on the click event position
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -268,12 +300,10 @@ window.addEventListener('click', (event) => {
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         
-        // If we click the same body again, deselect it (toggle)
         if (selectedBody === clickedObject) {
             selectedBody = null;
             selectionDisplay.innerHTML = 'Hover over a planet or the Sun!';
         } else {
-            // Select the new body and lock the info display
             selectedBody = clickedObject;
             displayBodyInfo(selectedBody.userData);
         }
