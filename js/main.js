@@ -13,24 +13,28 @@ const SUN_DATA = {
 const PLANETS = [
     { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
     { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
+    // Earth uses 'earth.jpg'
     { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
     { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
     { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
+    // Saturn uses 'saturn.jpg' and 'saturn_ring.jpg'
     { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
     { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
     { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
 ];
 
-// Data for Moons: Only Earth's moon has a texture property, the rest use placeholders.
+// Data for Moons: Only Earth's moon has the 'moon.jpg' texture, the rest use solid colors.
 const MOON_SYSTEMS = {
     "Earth": [
         { name: "Moon", radius: 0.15, distance: 1.5, orbitSpeed: 0.05, selfRotateSpeed: 0.015, texture: 'textures/moon.jpg', info: "Earth's only natural satellite." }
     ],
     "Mars": [
+        // Phobos and Deimos will use solid color (no texture defined)
         { name: "Phobos", radius: 0.08, distance: 0.5, orbitSpeed: 0.1, selfRotateSpeed: 0.05, info: "Inner, fast-orbiting moon." }, 
         { name: "Deimos", radius: 0.05, distance: 0.9, orbitSpeed: 0.05, selfRotateSpeed: 0.03, info: "Outer, potato-shaped moon." }
     ],
     "Jupiter": [
+        // Io, Europa, Ganymede will use solid color (no texture defined)
         { name: "Io", radius: 0.25, distance: 2.0, orbitSpeed: 0.03, selfRotateSpeed: 0.01, info: "Volcanically active." },
         { name: "Europa", radius: 0.2, distance: 3.0, orbitSpeed: 0.02, selfRotateSpeed: 0.008, info: "Icy, possible sub-surface ocean." },
         { name: "Ganymede", radius: 0.35, distance: 4.5, orbitSpeed: 0.015, selfRotateSpeed: 0.006, info: "Largest moon in solar system." }
@@ -150,6 +154,7 @@ function createOrbitLine(distance) {
     scene.add(orbitRing);
 }
 
+// Function handles missing textures gracefully (using solid color fallback)
 function createTexturedBody(data, isSun = false) {
     const geometry = new THREE.SphereGeometry(data.radius, 32, 32);
     
@@ -158,10 +163,12 @@ function createTexturedBody(data, isSun = false) {
     if (isSun) {
         material = new THREE.MeshBasicMaterial({ map: textureLoader.load(data.texture) });
     } else if (data.texture) {
+        // Use texture if provided
         material = new THREE.MeshStandardMaterial({ 
             map: textureLoader.load(data.texture), 
         }); 
     } else {
+        // Use fallback color if no texture is provided (e.g., for Phobos, Io, etc.)
         material = new THREE.MeshStandardMaterial({ color: data.color || 0xAAAAAA }); 
     }
     
@@ -201,8 +208,7 @@ function createRings(planetMesh, texturePath) {
     rings.rotation.x = Math.PI / 2; 
     rings.rotation.y = Math.PI / 8;
     
-    planetMesh.add(rings); 
-}
+    planetMesh.add(rings); }
 
 function displayBodyInfo(data) {
     const { sunDistText, earthDistText } = calculateDistanceInfo(data);
@@ -258,7 +264,8 @@ PLANETS.forEach(planetData => {
     
     // 4. Add Rings (if applicable)
     if (planetData.hasRings) {
-        createRings(planet, 'textures/saturn_ring.jpg');     }
+        createRings(planet, 'textures/saturn_ring.jpg');
+    }
 
     // 5. Store Planet for Animation
     orbitalBodies.push({
@@ -367,7 +374,7 @@ function animate() {
 
     sun.rotation.y += 0.001; 
 
-    // The clean loop structure that avoids the attachment_0 error
+    // FINAL FIX: Cleaned up the loop structure to ensure body.group and body.mesh are always valid.
     orbitalBodies.forEach(body => {
         if (body.group) {
             body.group.rotation.y += body.orbitSpeed; 
