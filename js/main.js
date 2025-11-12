@@ -11,6 +11,7 @@ let selectedBody = null;
 
 // Data for the inner solar system planets
 const PLANETS = [
+    // distance is in arbitrary scene units (SU); distanceAU is for display
     { name: "Mercury", radius: 0.2, color: 0xAAAAAA, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39 },
     { name: "Venus", radius: 0.4, color: 0xCC7722, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72 },
     { name: "Earth", radius: 0.5, color: 0x0000FF, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00 },
@@ -109,7 +110,7 @@ function createPlanetBody(data) {
     return { planet, orbitGroup }; 
 }
 
-// Function to display the information of the selected body
+// Function to display the information of the selected body (Used by both hover and click)
 function displayBodyInfo(data) {
     let infoText = `Selected: **${data.name}**`;
 
@@ -253,17 +254,27 @@ window.addEventListener('mousemove', (event) => {
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }, false);
 
-// NEW: Handle mouse click for locking selection
-window.addEventListener('click', () => {
-    // If the mouse is hovering over an object when clicked
-    if (currentIntersected) {
+// Handle mouse click for locking selection (FIXED)
+window.addEventListener('click', (event) => {
+    // 1. Immediately update mouse coordinates based on the click event position
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    
+    // 2. Perform raycast based on the exact click location
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(selectableObjects);
+
+    // 3. Logic: select, deselect, or lock
+    if (intersects.length > 0) {
+        const clickedObject = intersects[0].object;
+        
         // If we click the same body again, deselect it (toggle)
-        if (selectedBody === currentIntersected) {
+        if (selectedBody === clickedObject) {
             selectedBody = null;
             selectionDisplay.innerHTML = 'Hover over a planet or the Sun!';
         } else {
             // Select the new body and lock the info display
-            selectedBody = currentIntersected;
+            selectedBody = clickedObject;
             displayBodyInfo(selectedBody.userData);
         }
     } else {
