@@ -13,10 +13,11 @@ const SUN_DATA = {
 const PLANETS = [
     { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
     { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
-    // NOTE: hasClouds is set to false as 'earth_clouds.png' is not in the uploaded list.
+    // hasClouds is FALSE because 'earth_clouds.png' is not in the uploaded list.
     { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
     { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
     { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
+    // hasRings is TRUE, using 'saturn_ring.jpg' from your list.
     { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
     { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
     { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
@@ -60,6 +61,10 @@ const orbitalBodies = [];
 const selectionDisplay = document.getElementById('selection-display');
 const textureLoader = new THREE.TextureLoader(); 
 
+// Store initial camera state for reset function
+const INITIAL_CAMERA_POSITION = new THREE.Vector3(0, 0, 70);
+const INITIAL_CONTROLS_TARGET = new THREE.Vector3(0, 0, 0);
+
 
 // --- 1. SETUP ---
 
@@ -70,10 +75,15 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-camera.position.z = 70; 
+// Set camera to initial position
+camera.position.copy(INITIAL_CAMERA_POSITION); 
+
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
+// Set control target to initial target (the Sun)
+controls.target.copy(INITIAL_CONTROLS_TARGET); 
+
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0x333333); 
@@ -142,22 +152,18 @@ function createOrbitLine(distance) {
     scene.add(orbitRing);
 }
 
-// FIX: Graceful Texture Loading (No more 404s for missing moon textures!)
 function createTexturedBody(data, isSun = false) {
     const geometry = new THREE.SphereGeometry(data.radius, 32, 32);
     
     let material;
     
     if (isSun) {
-        // Sun: Always uses BasicMaterial + Texture
         material = new THREE.MeshBasicMaterial({ map: textureLoader.load(data.texture) });
     } else if (data.texture) {
-        // Planet/Moon with Texture: Uses StandardMaterial + Texture
         material = new THREE.MeshStandardMaterial({ 
             map: textureLoader.load(data.texture), 
         }); 
     } else {
-        // Fallback: Moon without texture uses a solid color
         material = new THREE.MeshStandardMaterial({ color: data.color || 0xAAAAAA }); 
     }
     
@@ -178,7 +184,6 @@ function createTexturedBody(data, isSun = false) {
 }
 
 function createRings(planetMesh, texturePath) {
-    // Note: texturePath is 'textures/saturn_ring.jpg' from your list
     const innerRadius = 1.5; 
     const outerRadius = 2.5;
     const segments = 64; 
@@ -198,8 +203,8 @@ function createRings(planetMesh, texturePath) {
     rings.rotation.x = Math.PI / 2; 
     rings.rotation.y = Math.PI / 8;
     
-    planetMesh.add(rings); }
-
+    planetMesh.add(rings); 
+}
 
 function displayBodyInfo(data) {
     const { sunDistText, earthDistText } = calculateDistanceInfo(data);
@@ -216,6 +221,18 @@ function displayBodyInfo(data) {
     infoText += `<br>Dist. from Earth: ${earthDistText}`;
 
     selectionDisplay.innerHTML = infoText;
+}
+
+
+// Function to reset the view
+function resetView() {
+    // Reset camera and controls to the initial position and target
+    controls.reset(); 
+    camera.position.copy(INITIAL_CAMERA_POSITION);
+    controls.target.copy(INITIAL_CONTROLS_TARGET);
+    controls.update();
+    selectedBody = null; // Clear any active selection
+    selectionDisplay.innerHTML = 'View reset. Hover over a planet or the Sun!';
 }
 
 
@@ -244,8 +261,7 @@ PLANETS.forEach(planetData => {
     
     // 4. Add Rings (if applicable)
     if (planetData.hasRings) {
-        // Uses the 'saturn_ring.jpg' from your uploaded list
-        createRings(planet, 'textures/saturn_ring.jpg');
+        createRings(planet, 'textures/saturn_ring.jpg'); [attachment_0](attachment)
     }
 
     // 5. Store Planet for Animation
@@ -268,8 +284,6 @@ PLANETS.forEach(planetData => {
                 parentAU: planetData.distanceAU, 
                 distanceAU: planetData.distanceAU
             };
-            // This function now correctly uses the texture if provided (Earth's Moon), 
-            // or a solid gray color if no texture property exists (all others).
             const moon = createTexturedBody(combinedData);
             
             const moonOrbitGroup = new THREE.Object3D();
@@ -417,6 +431,9 @@ window.addEventListener('click', (event) => {
         selectionDisplay.innerHTML = 'Hover over a planet or the Sun!';
     }
 });
+
+// Button click listener bound to the function
+document.getElementById('reset-view-button').addEventListener('click', resetView);
 
 // Handle Window Resize
 window.addEventListener('resize', () => {
