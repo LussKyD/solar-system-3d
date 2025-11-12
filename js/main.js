@@ -13,11 +13,9 @@ const SUN_DATA = {
 const PLANETS = [
     { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
     { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
-    // hasClouds is FALSE because 'earth_clouds.png' is not in the uploaded list.
     { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
     { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
     { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
-    // hasRings is TRUE, using 'saturn_ring.jpg' from your list.
     { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
     { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
     { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
@@ -226,12 +224,11 @@ function displayBodyInfo(data) {
 
 // Function to reset the view
 function resetView() {
-    // Reset camera and controls to the initial position and target
     controls.reset(); 
     camera.position.copy(INITIAL_CAMERA_POSITION);
     controls.target.copy(INITIAL_CONTROLS_TARGET);
     controls.update();
-    selectedBody = null; // Clear any active selection
+    selectedBody = null; 
     selectionDisplay.innerHTML = 'View reset. Hover over a planet or the Sun!';
 }
 
@@ -261,8 +258,7 @@ PLANETS.forEach(planetData => {
     
     // 4. Add Rings (if applicable)
     if (planetData.hasRings) {
-        createRings(planet, 'textures/saturn_ring.jpg'); [attachment_0](attachment)
-    }
+        createRings(planet, 'textures/saturn_ring.jpg');     }
 
     // 5. Store Planet for Animation
     orbitalBodies.push({
@@ -371,8 +367,11 @@ function animate() {
 
     sun.rotation.y += 0.001; 
 
+    // The clean loop structure that avoids the attachment_0 error
     orbitalBodies.forEach(body => {
-        body.group.rotation.y += body.orbitSpeed; 
+        if (body.group) {
+            body.group.rotation.y += body.orbitSpeed; 
+        }
         if (body.mesh) {
             body.mesh.rotation.y += body.selfRotateSpeed;
         }
