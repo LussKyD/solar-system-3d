@@ -618,6 +618,7 @@ let earthMesh = null;
 
 let focusedBody = null;
 let surfaceMarkersList = [];
+let surfaceMarkerByMissionId = {};
 
 const ACCENT_BY_BODY = { Moon: 'accent-moon', Earth: 'accent-earth', Mars: 'accent-mars' };
 
@@ -1016,6 +1017,7 @@ function createSurfaceMarkers(bodyName, bodyMesh) {
     if (!bodyMesh) return;
     const radius = bodyMesh.userData.radius || (bodyMesh.geometry ? bodyMesh.geometry.parameters.radius : 0.5);
     const r = typeof radius === 'number' ? radius : 0.5;
+    surfaceMarkerByMissionId = {};
 
     if (bodyName === 'Moon' && moonMesh) {
         const lunarMissions = MISSIONS.filter(m => m.target === 'Moon' && (m.latitudeDeg != null || m.longitudeDeg != null));
@@ -1034,11 +1036,17 @@ function createSurfaceMarkers(bodyName, bodyMesh) {
             dot.userData = { name: mission.name, agency: mission.agency, year: mission.year, type: mission.type, id: mission.id };
             bodyMesh.add(dot);
             surfaceMarkersList.push(dot);
+            if (mission.id) {
+                surfaceMarkerByMissionId[mission.id] = dot;
+            }
         });
     } else if (bodyName === 'Earth' && earthMesh) {
-        LAUNCH_SITES.forEach(site => {
-            const pos = latLonToSpherePosition(site.lat, site.lon, r * 1.01);
-            const geom = new THREE.SphereGeometry(0.025, 12, 12);
+        const earthMissions = MISSIONS.filter(m => m.target === 'Earth');
+        earthMissions.forEach(mission => {
+            const lon = mission.longitudeDeg != null ? mission.longitudeDeg : 0;
+            const lat = mission.inclinationDeg != null ? Math.max(-80, Math.min(80, mission.inclinationDeg)) : 0;
+            const pos = latLonToSpherePosition(lat, lon, r * 1.02);
+            const geom = new THREE.SphereGeometry(0.03, 12, 12);
             const mat = new THREE.MeshBasicMaterial({
                 color: 0x60a5fa,
                 transparent: true,
@@ -1046,9 +1054,12 @@ function createSurfaceMarkers(bodyName, bodyMesh) {
             });
             const dot = new THREE.Mesh(geom, mat);
             dot.position.copy(pos);
-            dot.userData = { name: site.name, country: site.country, type: 'Launch site' };
+            dot.userData = { name: mission.name, agency: mission.agency, year: mission.year, type: mission.type, id: mission.id };
             bodyMesh.add(dot);
             surfaceMarkersList.push(dot);
+            if (mission.id) {
+                surfaceMarkerByMissionId[mission.id] = dot;
+            }
         });
     }
 }
@@ -1058,6 +1069,7 @@ function clearSurfaceMarkers() {
         if (m.parent) m.parent.remove(m);
     });
     surfaceMarkersList = [];
+    surfaceMarkerByMissionId = {};
 }
 
 function populateBodyPanel(data) {
@@ -1195,19 +1207,10 @@ function populateBodyModal(data) {
             missionsEl._missionsData = missionsForBody;
             missionsEl.querySelectorAll('.mission-row.selectable').forEach(row => {
                 row.addEventListener('click', () => {
-                    missionsEl.querySelectorAll('.mission-row.selected').forEach(r => r.classList.remove('selected'));
-                    row.classList.add('selected');
-                    const idx = parseInt(row.getAttribute('data-mission-index'), 10);
-                    const mission = missionsForBody[idx];
-                    let detailEl = missionsEl.querySelector('.mission-selected-detail');
-                    if (!detailEl) {
-                        detailEl = document.createElement('div');
-                        detailEl.className = 'mission-selected-detail';
-                        missionsEl.appendChild(detailEl);
+                    const missionId = row.getAttribute('data-mission-id');
+                    if (missionId) {
+                        selectMissionInModalById(missionId);
                     }
-                    const desc = mission.description || mission.status || 'No additional details.';
-                    detailEl.innerHTML = `<p class="mission-detail-text">${desc}</p>`;
-                    detailEl.classList.remove('hidden');
                 });
             });
         } else {
@@ -1215,6 +1218,43 @@ function populateBodyModal(data) {
             missionsEl._missionsData = [];
         }
     }
+}
+
+function selectMissionInModalById(missionId) {
+    if (!missionId) return;
+    const missionsEl = document.getElementById('modal-missions-list');
+    if (!missionsEl || !missionsEl._missionsData) return;
+    const missionsForBody = missionsEl._missionsData;
+    const mission = missionsForBody.find(m => m.id === missionId);
+    if (!mission) return;
+
+    missionsEl.querySelectorAll('.mission-row.selected').forEach(r => r.classList.remove('selected'));
+    const row = missionsEl.querySelector(`.mission-row.selectable[data-mission-id="${missionId}"]`);
+    if (row) {
+        row.classList.add('selected');
+    }
+
+    let detailEl = missionsEl.querySelector('.mission-selected-detail');
+    if (!detailEl) {
+        detailEl = document.createElement('div');
+        detailEl.className = 'mission-selected-detail';
+        missionsEl.appendChild(detailEl);
+    }
+    const desc = mission.description || mission.status || 'No additional details.';
+    detailEl.innerHTML = `<p class="mission-detail-text">${desc}</p>`;
+    detailEl.classList.remove('hidden');
+
+    if (modalMarkerTooltip) {
+        modalMarkerTooltip.textContent = mission.name || 'Missions';
+        modalMarkerTooltip.classList.remove('hidden');
+    }
+
+    surfaceMarkersList.forEach(m => {
+        if (!m || !m.scale) return;
+        const isSelected = m.userData && m.userData.id === missionId;
+        const s = isSelected ? 1.7 : 1.0;
+        m.scale.set(s, s, s);
+    });
 }
 
 function openBodyModal(mesh) {
@@ -1613,20 +1653,18 @@ document.getElementById('modal-rotate')?.addEventListener('click', () => {
     modalAngle += 0.4;
 });
 
-// Modal globe: tooltip when hovering over surface markers
-function updateModalMarkerTooltip(clientX, clientY) {
-    if (!modalMarkerTooltip || !modalRenderer || !modalCamera || !focusedBody) return;
+// Modal globe: helpers for surface marker picking + tooltip + selection
+function pickSurfaceMarkerAt(clientX, clientY) {
+    if (!modalRenderer || !modalCamera || !focusedBody) return null;
     const canvas = modalRenderer.domElement;
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     if (x < 0 || x > rect.width || y < 0 || y > rect.height) {
-        modalMarkerTooltip.classList.add('hidden');
-        return;
+        return null;
     }
     const ndcX = (x / rect.width) * 2 - 1;
     const ndcY = -(y / rect.height) * 2 + 1;
-    let found = null;
     const threshold = 0.08;
     for (let i = 0; i < surfaceMarkersList.length; i++) {
         const m = surfaceMarkersList[i];
@@ -1634,20 +1672,33 @@ function updateModalMarkerTooltip(clientX, clientY) {
         m.getWorldPosition(p);
         p.project(modalCamera);
         if (Math.abs(p.x - ndcX) < threshold && Math.abs(p.y - ndcY) < threshold) {
-            found = m.userData;
-            break;
+            return m;
         }
     }
-    if (found) {
-        modalMarkerTooltip.textContent = found.name || 'Missions';
+    return null;
+}
+
+function updateModalMarkerTooltip(clientX, clientY) {
+    if (!modalMarkerTooltip) return;
+    const marker = pickSurfaceMarkerAt(clientX, clientY);
+    if (marker && marker.userData) {
+        modalMarkerTooltip.textContent = marker.userData.name || 'Missions';
         modalMarkerTooltip.classList.remove('hidden');
     } else {
         modalMarkerTooltip.classList.add('hidden');
     }
 }
+
+function handleModalMarkerClick(clientX, clientY) {
+    const marker = pickSurfaceMarkerAt(clientX, clientY);
+    if (!marker || !marker.userData || !marker.userData.id) return;
+    selectMissionInModalById(marker.userData.id);
+}
+
 if (modalGlobeView) {
     modalGlobeView.addEventListener('mousemove', (e) => { updateModalMarkerTooltip(e.clientX, e.clientY); });
     modalGlobeView.addEventListener('mouseleave', () => { if (modalMarkerTooltip) modalMarkerTooltip.classList.add('hidden'); });
+    modalGlobeView.addEventListener('click', (e) => { handleModalMarkerClick(e.clientX, e.clientY); });
 }
 
 // Body panel tabs
