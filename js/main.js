@@ -156,6 +156,394 @@ const MOON_SYSTEMS = {
     ]
 };
 
+// Highlighted space missions (sample set; can be extended)
+// Note: Positions are approximate and scaled for visualization, not precise ephemeris.
+const MISSIONS = [
+    // Earth orbit & Moon
+    {
+        id: 'sputnik-1',
+        name: 'Sputnik 1',
+        agency: 'Soviet Union',
+        target: 'Earth',
+        type: 'Satellite',
+        year: 1957,
+        status: 'Reentered atmosphere',
+        description: 'First artificial satellite to orbit Earth.',
+        altitudeKm: 215,
+        longitudeDeg: -20,
+        inclinationDeg: 65
+    },
+    {
+        id: 'apollo-11',
+        name: 'Apollo 11',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1969,
+        status: 'Completed',
+        description: 'First crewed Moon landing (Neil Armstrong & Buzz Aldrin).',
+        longitudeDeg: 23.47,
+        latitudeDeg: 0.67
+    },
+    {
+        id: 'apollo-12',
+        name: 'Apollo 12',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1969,
+        status: 'Completed',
+        description: 'Second crewed Moon landing near Surveyor 3.',
+        longitudeDeg: -23.42,
+        latitudeDeg: -3.01
+    },
+    {
+        id: 'apollo-14',
+        name: 'Apollo 14',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1971,
+        status: 'Completed',
+        description: 'Third crewed Moon landing at Fra Mauro.',
+        longitudeDeg: -17.47,
+        latitudeDeg: -3.65
+    },
+    {
+        id: 'apollo-15',
+        name: 'Apollo 15',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1971,
+        status: 'Completed',
+        description: 'First mission with the Lunar Roving Vehicle.',
+        longitudeDeg: 3.65,
+        latitudeDeg: 26.1
+    },
+    {
+        id: 'apollo-16',
+        name: 'Apollo 16',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1972,
+        status: 'Completed',
+        description: 'Explored the lunar highlands near Descartes.',
+        longitudeDeg: 15.5,
+        latitudeDeg: -8.97
+    },
+    {
+        id: 'apollo-17',
+        name: 'Apollo 17',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed landing',
+        year: 1972,
+        status: 'Completed',
+        description: 'Last crewed Moon landing; first geologist on the Moon.',
+        longitudeDeg: 30.77,
+        latitudeDeg: 20.19
+    },
+    {
+        id: 'apollo-13',
+        name: 'Apollo 13',
+        agency: 'NASA (USA)',
+        target: 'Moon',
+        type: 'Crewed mission (aborted landing)',
+        year: 1970,
+        status: 'Crew returned safely after in-flight failure.',
+        description: 'Famous \"successful failure\" mission; no lunar landing.'
+    },
+    {
+        id: 'luna-2',
+        name: 'Luna 2',
+        agency: 'Soviet Union',
+        target: 'Moon',
+        type: 'Impact probe',
+        year: 1959,
+        status: 'Impact on lunar surface.',
+        description: 'First human-made object to reach the Moon.'
+    },
+    {
+        id: 'luna-9',
+        name: 'Luna 9',
+        agency: 'Soviet Union',
+        target: 'Moon',
+        type: 'Lander',
+        year: 1966,
+        status: 'Completed',
+        description: 'First successful soft landing on the Moon.'
+    },
+    {
+        id: 'luna-15',
+        name: 'Luna 15',
+        agency: 'Soviet Union',
+        target: 'Moon',
+        type: 'Sample return (failed)',
+        year: 1969,
+        status: 'Crashed during descent near Mare Crisium.',
+        description: 'Attempted sample return mission that failed during landing.'
+    },
+    {
+        id: 'chang-e-3',
+        name: 'Chang\'e 3',
+        agency: 'CNSA (China)',
+        target: 'Moon',
+        type: 'Lander & rover',
+        year: 2013,
+        status: 'Mission complete.',
+        description: 'First soft landing on the Moon since 1976; carried Yutu rover.'
+    },
+    {
+        id: 'chang-e-4',
+        name: 'Chang\'e 4',
+        agency: 'CNSA (China)',
+        target: 'Moon',
+        type: 'Lander & rover',
+        year: 2018,
+        status: 'Operational.',
+        description: 'First soft landing on the lunar far side; carries Yutu-2 rover.'
+    },
+    {
+        id: 'chandrayaan-2',
+        name: 'Chandrayaan-2',
+        agency: 'ISRO (India)',
+        target: 'Moon',
+        type: 'Orbiter, lander & rover (partial success)',
+        year: 2019,
+        status: 'Orbiter operational; lander crashed.',
+        description: 'India\'s second lunar mission; orbiter continues to study the Moon.'
+    },
+    {
+        id: 'iss',
+        name: 'International Space Station',
+        agency: 'NASA / Roscosmos / ESA / JAXA / CSA',
+        target: 'Earth',
+        type: 'Space station',
+        year: 1998,
+        status: 'Operational',
+        description: 'Modular space station in low Earth orbit, permanently crewed.',
+        altitudeKm: 420,
+        longitudeDeg: 45,
+        inclinationDeg: 51.6
+    },
+    {
+        id: 'hubble',
+        name: 'Hubble Space Telescope',
+        agency: 'NASA / ESA',
+        target: 'Earth',
+        type: 'Space telescope',
+        year: 1990,
+        status: 'Operational',
+        description: 'Iconic space telescope that revolutionized astronomy.',
+        altitudeKm: 540,
+        longitudeDeg: 160,
+        inclinationDeg: 28.5
+    },
+    // Mars missions
+    {
+        id: 'viking-1',
+        name: 'Viking 1',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Lander & orbiter',
+        year: 1975,
+        status: 'Completed',
+        description: 'First successful Mars lander and orbiter mission.',
+        orbitalRadiusOffset: 1.0,
+        alongOrbitDeg: 40
+    },
+    {
+        id: 'venera-7',
+        name: 'Venera 7',
+        agency: 'Soviet Union',
+        target: 'Venus',
+        type: 'Lander',
+        year: 1970,
+        status: 'First successful landing on another planet (short-lived).',
+        orbitalRadiusOffset: 0.8,
+        alongOrbitDeg: -60
+    },
+    {
+        id: 'mars-climate-orbiter',
+        name: 'Mars Climate Orbiter',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Orbiter',
+        year: 1998,
+        status: 'Lost due to navigation error (metric/imperial mismatch).',
+        orbitalRadiusOffset: 0.8,
+        alongOrbitDeg: 120
+    },
+    {
+        id: 'sojourner',
+        name: 'Mars Pathfinder / Sojourner',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Lander & rover',
+        year: 1996,
+        status: 'Completed',
+        description: 'First successful Mars rover.',
+        orbitalRadiusOffset: 0.6,
+        alongOrbitDeg: -120
+    },
+    {
+        id: 'spirit',
+        name: 'Spirit',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Rover',
+        year: 2003,
+        status: 'Mission complete',
+        description: 'Mars Exploration Rover; operated for over 6 years.',
+        orbitalRadiusOffset: 0.4,
+        alongOrbitDeg: -10
+    },
+    {
+        id: 'opportunity',
+        name: 'Opportunity',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Rover',
+        year: 2003,
+        status: 'Mission complete',
+        description: 'Mars rover that operated for nearly 15 years.',
+        orbitalRadiusOffset: 0.4,
+        alongOrbitDeg: 30
+    },
+    {
+        id: 'curiosity',
+        name: 'Curiosity',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Rover',
+        year: 2011,
+        status: 'Operational',
+        description: 'Nuclear-powered rover exploring Gale Crater.',
+        orbitalRadiusOffset: 0.2,
+        alongOrbitDeg: 70
+    },
+    {
+        id: 'perseverance',
+        name: 'Perseverance',
+        agency: 'NASA (USA)',
+        target: 'Mars',
+        type: 'Rover',
+        year: 2020,
+        status: 'Operational',
+        description: 'Mars rover exploring Jezero Crater with a focus on astrobiology.',
+        orbitalRadiusOffset: 0.1,
+        alongOrbitDeg: -70
+    },
+    // Outer solar system
+    {
+        id: 'voyager-1',
+        name: 'Voyager 1',
+        agency: 'NASA (USA)',
+        target: 'Interstellar space',
+        type: 'Flyby / interstellar probe',
+        year: 1977,
+        status: 'Operational',
+        description: 'Most distant human-made object, exploring interstellar space.',
+        radialDistance: 140, // scaled distance from Sun
+        polarAngleDeg: 20,
+        azimuthDeg: 45
+    },
+    {
+        id: 'voyager-2',
+        name: 'Voyager 2',
+        agency: 'NASA (USA)',
+        target: 'Outer planets',
+        type: 'Flyby / interstellar probe',
+        year: 1977,
+        status: 'Operational',
+        description: 'Only spacecraft to have visited Uranus and Neptune.',
+        radialDistance: 120,
+        polarAngleDeg: 40,
+        azimuthDeg: -60
+    },
+    {
+        id: 'pioneer-10',
+        name: 'Pioneer 10',
+        agency: 'NASA (USA)',
+        target: 'Jupiter / outer solar system',
+        type: 'Flyby probe',
+        year: 1972,
+        status: 'Mission complete',
+        description: 'First spacecraft to travel through the asteroid belt and make direct observations of Jupiter.',
+        radialDistance: 80,
+        polarAngleDeg: 30,
+        azimuthDeg: 120
+    },
+    {
+        id: 'cassini-huygens',
+        name: 'Cassini–Huygens',
+        agency: 'NASA / ESA / ASI',
+        target: 'Saturn & Titan',
+        type: 'Orbiter & lander',
+        year: 1997,
+        status: 'Mission complete (Grand Finale plunge in 2017).',
+        description: 'Revealed Saturn\'s rings, moons, and delivered the Huygens probe to Titan.',
+        attachTo: 'Saturn',
+        radialOffset: 3.0,
+        angleDeg: -45
+    },
+    {
+        id: 'juno',
+        name: 'Juno',
+        agency: 'NASA (USA)',
+        target: 'Jupiter',
+        type: 'Orbiter',
+        year: 2011,
+        status: 'Operational',
+        description: 'Studies Jupiter\'s composition, gravity field, and magnetosphere.',
+        attachTo: 'Jupiter',
+        radialOffset: 3.0,
+        angleDeg: 60
+    },
+    {
+        id: 'new-horizons',
+        name: 'New Horizons',
+        agency: 'NASA (USA)',
+        target: 'Pluto & Kuiper Belt',
+        type: 'Flyby probe',
+        year: 2006,
+        status: 'Extended mission in Kuiper Belt.',
+        description: 'First spacecraft to explore Pluto and its moons, now exploring Kuiper Belt objects.',
+        radialDistance: 90,
+        polarAngleDeg: 70,
+        azimuthDeg: -20
+    },
+    // Sample missions from other agencies
+    {
+        id: 'hayabusa2',
+        name: 'Hayabusa2',
+        agency: 'JAXA (Japan)',
+        target: 'Asteroid Ryugu',
+        type: 'Sample return',
+        year: 2014,
+        status: 'Sample returned to Earth in 2020.',
+        description: 'Brought samples from asteroid Ryugu to Earth.',
+        radialDistance: 50,
+        polarAngleDeg: 80,
+        azimuthDeg: 10
+    },
+    {
+        id: 'rosetta',
+        name: 'Rosetta / Philae',
+        agency: 'ESA (Europe)',
+        target: 'Comet 67P/Churyumov–Gerasimenko',
+        type: 'Comet orbiter & lander',
+        year: 2004,
+        status: 'Mission complete.',
+        description: 'First spacecraft to orbit a comet and deploy a lander (Philae).',
+        radialDistance: 65,
+        polarAngleDeg: 100,
+        azimuthDeg: 150
+    }
+];
+
 
 // --- Global Variables for Three.js and Interaction ---
 const raycaster = new THREE.Raycaster();
@@ -169,6 +557,8 @@ const orbitLines = [];
 const asteroidGroups = [];
 const kuiperGroups = [];
 const labelPairs = [];
+const missionObjects = [];
+let moonMesh = null;
 
 const selectionDisplay = document.getElementById('selection-display');
 const textureLoader = new THREE.TextureLoader(); 
@@ -178,6 +568,7 @@ let animationPaused = false;
 let speedMultiplier = 1;
 let showLabels = true;
 let cameraTransition = null;
+let showMissions = true;
 
 // Store initial camera state for reset function
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(0, 0, 70);
@@ -301,7 +692,12 @@ function createTexturedBody(data, isSun = false) {
         info: data.info || '',
         distanceSU: data.distance || 0,
         parentName: data.parentName || 'Sun',
-        radius: data.radius || 0
+        radius: data.radius || 0,
+        radiusKm: data.radiusKm || null,
+        orbitalPeriodDays: data.orbitalPeriodDays || null,
+        orbitalPeriodYears: data.orbitalPeriodYears || null,
+        agency: data.agency || null,
+        missionType: data.missionType || null
     }; 
     selectableObjects.push(body);
     
@@ -381,23 +777,43 @@ function displayBodyInfo(data) {
     const orbitalDays = data.orbitalPeriodDays;
     const orbitalYears = data.orbitalPeriodYears;
     const radiusKm = data.radiusKm;
+    const agency = data.agency;
+    const missionType = data.missionType;
+    const launchYear = data.year || data.launchYear;
 
     let typeLabel = data.type || 'Body';
     if (data.type === 'Moon') {
         typeLabel = 'Moon';
     } else if (data.type === 'Star') {
         typeLabel = 'Star';
+    } else if (missionType) {
+        typeLabel = missionType;
     }
 
-    let infoText = `<strong>${data.name}</strong><br>`;
-    infoText += `${typeLabel}`;
+    let infoText = `<strong>${data.name}</strong><br>${typeLabel}`;
+
+    if (agency) {
+        infoText += ` • ${agency}`;
+    }
+    if (launchYear) {
+        infoText += ` • Launched: ${launchYear}`;
+    }
 
     if (data.type === 'Star') {
-        infoText += `<br>${data.info}`;
+        if (data.info) {
+            infoText += `<br>${data.info}`;
+        }
     } else if (data.type === 'Moon') {
         infoText += `<br>Orbits: ${data.parentName}`;
         if (data.info) {
             infoText += `<br>${data.info}`;
+        }
+    } else if (missionType) {
+        if (data.info) {
+            infoText += `<br>${data.info}`;
+        }
+        if (data.status) {
+            infoText += `<br>Status: ${data.status}`;
         }
     } else if (data.info) {
         infoText += `<br>${data.info}`;
@@ -415,13 +831,102 @@ function displayBodyInfo(data) {
         if (orbitalYears) {
             orbitalParts.push(`${orbitalYears} years`);
         }
-        infoText += `<br>Orbital period: ${orbitalParts.join(" / ")}`;
+        if (orbitalParts.length > 0) {
+            infoText += `<br>Orbital period: ${orbitalParts.join(" / ")}`;
+        }
     }
 
-    infoText += `<br>Dist. from Sun: ${sunDistText}`;
-    infoText += `<br>Dist. from Earth: ${earthDistText}`;
+    if (!missionType) {
+        infoText += `<br>Dist. from Sun: ${sunDistText}`;
+        infoText += `<br>Dist. from Earth: ${earthDistText}`;
+    }
 
     selectionDisplay.innerHTML = infoText;
+}
+
+// Create mission markers and attach them to appropriate bodies or free space
+function createMissionMarkers() {
+    MISSIONS.forEach(mission => {
+        const size = 0.15;
+        const geometry = new THREE.SphereGeometry(size, 12, 12);
+        const material = new THREE.MeshStandardMaterial({ color: 0xffc857 });
+        const marker = new THREE.Mesh(geometry, material);
+
+        let parentGroup = null;
+        if (mission.attachTo) {
+            const targetBody = orbitalBodies.find(b => b.name === mission.attachTo);
+            if (targetBody && targetBody.mesh) {
+                parentGroup = targetBody.mesh;
+            }
+        }
+
+        if (mission.target === 'Earth' || mission.target === 'Moon') {
+            const earthBody = orbitalBodies.find(b => b.name === 'Earth');
+            if (earthBody && earthBody.mesh) {
+                const parent = mission.target === 'Moon' && moonMesh ? moonMesh : earthBody.mesh;
+
+                const radiusOffset = (parent.userData.radius || 1) + (mission.altitudeKm ? 0.5 : 0.3);
+                const incRad = (mission.inclinationDeg || 0) * Math.PI / 180;
+                const lonRad = (mission.longitudeDeg || 0) * Math.PI / 180;
+
+                const x = radiusOffset * Math.cos(incRad) * Math.cos(lonRad);
+                const y = radiusOffset * Math.sin(incRad);
+                const z = radiusOffset * Math.cos(incRad) * Math.sin(lonRad);
+
+                marker.position.set(x, y, z);
+                parent.add(marker);
+            }
+        } else if (mission.radialDistance) {
+            const r = mission.radialDistance;
+            const polar = (mission.polarAngleDeg || 60) * Math.PI / 180;
+            const az = (mission.azimuthDeg || 0) * Math.PI / 180;
+
+            const x = r * Math.sin(polar) * Math.cos(az);
+            const y = r * Math.cos(polar);
+            const z = r * Math.sin(polar) * Math.sin(az);
+
+            marker.position.set(x, y, z);
+            scene.add(marker);
+        } else if (mission.target === 'Mars' || mission.target === 'Venus') {
+            const body = orbitalBodies.find(b => b.name === mission.target);
+            if (body && body.mesh) {
+                const baseRadius = body.mesh.position.x;
+                const offset = mission.orbitalRadiusOffset || 0.5;
+                const angleRad = (mission.alongOrbitDeg || 0) * Math.PI / 180;
+                const r = baseRadius + offset;
+
+                const x = r * Math.cos(angleRad);
+                const z = r * Math.sin(angleRad);
+
+                marker.position.set(x, 0.2, z);
+                scene.add(marker);
+            }
+        } else if (parentGroup) {
+            const r = (parentGroup.userData.radius || 1) + (mission.radialOffset || 2.0);
+            const angleRad = (mission.angleDeg || 0) * Math.PI / 180;
+            marker.position.set(r * Math.cos(angleRad), 0.3, r * Math.sin(angleRad));
+            parentGroup.add(marker);
+        } else {
+            marker.position.set(0, 0, 0);
+            scene.add(marker);
+        }
+
+        marker.userData = {
+            name: mission.name,
+            type: 'Mission',
+            missionType: mission.type,
+            agency: mission.agency,
+            year: mission.year,
+            status: mission.status,
+            info: mission.description || '',
+            distanceAU: 0,
+            parentAU: 0,
+            parentName: mission.target
+        };
+
+        selectableObjects.push(marker);
+        missionObjects.push(marker);
+    });
 }
 
 
@@ -508,6 +1013,10 @@ PLANETS.forEach(planetData => {
                 orbitSpeed: moonData.orbitSpeed,
                 selfRotateSpeed: moonData.selfRotateSpeed
             });
+
+            if (planetData.name === 'Earth' && moonData.name === 'Moon') {
+                moonMesh = moon;
+            }
         });
     }
 });
@@ -577,6 +1086,90 @@ for (let i = 0; i < kuiperCount; i++) {
     });
 }
 
+// 3e. Missions (markers attached to bodies or free-flying)
+createMissionMarkers();
+    /*MISSIONS.forEach(mission => {
+        const size = 0.15;
+        const geometry = new THREE.SphereGeometry(size, 12, 12);
+        const material = new THREE.MeshStandardMaterial({ color: 0xffc857 });
+        const marker = new THREE.Mesh(geometry, material);
+
+        let parentGroup = null;
+        if (mission.attachTo) {
+            const targetBody = orbitalBodies.find(b => b.name === mission.attachTo);
+            if (targetBody && targetBody.mesh) {
+                parentGroup = targetBody.mesh;
+            }
+        }
+
+        if (mission.target === 'Earth' || mission.target === 'Moon') {
+            const earthBody = orbitalBodies.find(b => b.name === 'Earth');
+            if (earthBody && earthBody.mesh) {
+                const parent = mission.target === 'Moon' && moonMesh ? moonMesh : earthBody.mesh;
+
+                const radiusOffset = (parent.userData.radius || 1) + (mission.altitudeKm ? 0.5 : 0.3);
+                const incRad = (mission.inclinationDeg || 0) * Math.PI / 180;
+                const lonRad = (mission.longitudeDeg || 0) * Math.PI / 180;
+
+                const x = radiusOffset * Math.cos(incRad) * Math.cos(lonRad);
+                const y = radiusOffset * Math.sin(incRad);
+                const z = radiusOffset * Math.cos(incRad) * Math.sin(lonRad);
+
+                marker.position.set(x, y, z);
+                parent.add(marker);
+            }
+        } else if (mission.radialDistance) {
+            const r = mission.radialDistance;
+            const polar = (mission.polarAngleDeg || 60) * Math.PI / 180;
+            const az = (mission.azimuthDeg || 0) * Math.PI / 180;
+
+            const x = r * Math.sin(polar) * Math.cos(az);
+            const y = r * Math.cos(polar);
+            const z = r * Math.sin(polar) * Math.sin(az);
+
+            marker.position.set(x, y, z);
+            scene.add(marker);
+        } else if (mission.target === 'Mars' || mission.target === 'Venus') {
+            const body = orbitalBodies.find(b => b.name === mission.target);
+            if (body && body.mesh) {
+                const baseRadius = body.mesh.position.x;
+                const offset = mission.orbitalRadiusOffset || 0.5;
+                const angleRad = (mission.alongOrbitDeg || 0) * Math.PI / 180;
+                const r = baseRadius + offset;
+
+                const x = r * Math.cos(angleRad);
+                const z = r * Math.sin(angleRad);
+
+                marker.position.set(x, 0.2, z);
+                scene.add(marker);
+            }
+        } else if (parentGroup) {
+            const r = (parentGroup.userData.radius || 1) + (mission.radialOffset || 2.0);
+            const angleRad = (mission.angleDeg || 0) * Math.PI / 180;
+            marker.position.set(r * Math.cos(angleRad), 0.3, r * Math.sin(angleRad));
+            parentGroup.add(marker);
+        } else {
+            marker.position.set(0, 0, 0);
+            scene.add(marker);
+        }
+
+        marker.userData = {
+            name: mission.name,
+            type: 'Mission',
+            missionType: mission.type,
+            agency: mission.agency,
+            year: mission.year,
+            status: mission.status,
+            info: mission.description || '',
+            distanceAU: 0,
+            parentAU: 0,
+            parentName: mission.target
+        };
+
+        selectableObjects.push(marker);
+        missionObjects.push(marker);
+    });*/
+}
 
 // --- 4. ANIMATION AND INTERACTION LOOP ---
 
@@ -686,7 +1279,15 @@ window.addEventListener('click', (event) => {
             // Focus the camera on the selected body
             const worldPos = new THREE.Vector3();
             clickedObject.getWorldPosition(worldPos);
-            controls.target.copy(worldPos);
+
+            // Special zoom-in for the Moon
+            if (selectedBody.userData && selectedBody.userData.name === 'Moon') {
+                const toCamera = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
+                const targetPosition = worldPos.clone().add(toCamera.multiplyScalar(5));
+                startCameraTransition(targetPosition, worldPos, 1500);
+            } else {
+                controls.target.copy(worldPos);
+            }
         }
     } else {
         selectedBody = null;
@@ -704,6 +1305,7 @@ const toggleOrbitsCheckbox = document.getElementById('toggle-orbits');
 const toggleAsteroidsCheckbox = document.getElementById('toggle-asteroids');
 const toggleKuiperCheckbox = document.getElementById('toggle-kuiper');
 const toggleLabelsCheckbox = document.getElementById('toggle-labels');
+const toggleMissionsCheckbox = document.getElementById('toggle-missions');
 const presetButtons = document.querySelectorAll('.preset-button');
 
 if (toggleAnimationButton) {
@@ -750,6 +1352,17 @@ if (toggleKuiperCheckbox) {
 if (toggleLabelsCheckbox) {
     toggleLabelsCheckbox.addEventListener('change', () => {
         showLabels = toggleLabelsCheckbox.checked;
+    });
+}
+
+if (toggleMissionsCheckbox) {
+    toggleMissionsCheckbox.addEventListener('change', () => {
+        showMissions = toggleMissionsCheckbox.checked;
+        missionObjects.forEach(marker => {
+            if (marker) {
+                marker.visible = showMissions;
+            }
+        });
     });
 }
 
