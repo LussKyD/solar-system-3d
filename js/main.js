@@ -58,8 +58,18 @@ let selectedBody = null;
 
 const selectableObjects = []; 
 const orbitalBodies = []; 
+const orbitLines = [];
+const asteroidGroups = [];
+const kuiperGroups = [];
+const labelPairs = [];
+
 const selectionDisplay = document.getElementById('selection-display');
 const textureLoader = new THREE.TextureLoader(); 
+
+// Animation / controls state
+let animationPaused = false;
+let speedMultiplier = 1;
+let showLabels = true;
 
 // Store initial camera state for reset function
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(0, 0, 70);
@@ -150,6 +160,9 @@ function createOrbitLine(distance) {
 
     orbitRing.rotation.x = Math.PI / 2; 
     scene.add(orbitRing);
+    orbitLines.push(orbitRing);
+
+    return orbitRing;
 }
 
 // Function handles missing textures gracefully (using solid color fallback)
@@ -179,7 +192,8 @@ function createTexturedBody(data, isSun = false) {
         parentAU: data.parentAU || 0,
         info: data.info || '',
         distanceSU: data.distance || 0,
-        parentName: data.parentName || 'Sun'
+        parentName: data.parentName || 'Sun',
+        radius: data.radius || 0
     }; 
     selectableObjects.push(body);
     
@@ -207,6 +221,51 @@ function createRings(planetMesh, texturePath) {
     rings.rotation.y = Math.PI / 8;
     
     planetMesh.add(rings); }
+
+// Create a small floating text label sprite for a body
+function createLabelSprite(text) {
+    const canvas = document.createElement('canvas');
+    const size = 256;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, size, size);
+    ctx.font = '28px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(15,23,42,0.9)';
+    ctx.strokeStyle = 'rgba(148,163,184,0.9)';
+    ctx.lineWidth = 4;
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const paddingX = 8;
+    const paddingY = 6;
+    const textMetrics = ctx.measureText(text);
+    const w = textMetrics.width + paddingX * 2;
+    const h = 34 + paddingY * 2;
+
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(cx - w / 2, cy - h / 2, w, h, 10);
+    } else {
+        ctx.rect(cx - w / 2, cy - h / 2, w, h);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillText(text, cx, cy + 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(4, 2, 1);
+
+    return sprite;
+}
 
 function displayBodyInfo(data) {
     const { sunDistText, earthDistText } = calculateDistanceInfo(data);
@@ -245,6 +304,11 @@ createStarfield();
 const sun = createTexturedBody(SUN_DATA, true);
 scene.add(sun);
 
+// Label for the Sun
+const sunLabel = createLabelSprite(SUN_DATA.name);
+scene.add(sunLabel);
+labelPairs.push({ mesh: sun, label: sunLabel });
+
 
 // 3b. All Planets (Mercury to Neptune) and their systems
 PLANETS.forEach(planetData => {
@@ -274,7 +338,12 @@ PLANETS.forEach(planetData => {
         selfRotateSpeed: planetData.selfRotateSpeed
     });
 
-    // 6. Add Moons (if any exist for this planet)
+    // 6. Label for the planet
+    const planetLabel = createLabelSprite(planetData.name);
+    scene.add(planetLabel);
+    labelPairs.push({ mesh: planet, label: planetLabel });
+
+    // 7. Add Moons (if any exist for this planet)
     const moons = MOON_SYSTEMS[planetData.name];
     if (moons) {
         moons.forEach(moonData => {
@@ -324,6 +393,7 @@ for (let i = 0; i < asteroidCount; i++) {
     asteroidOrbit.rotation.y = Math.random() * Math.PI * 2;
     asteroidOrbit.add(asteroid);
     scene.add(asteroidOrbit);
+    asteroidGroups.push(asteroidOrbit);
 
     // FIX: Ensure mesh is the asteroid, and group is the orbit.
     orbitalBodies.push({
@@ -355,6 +425,7 @@ for (let i = 0; i < kuiperCount; i++) {
     kuiperOrbit.rotation.y = Math.random() * Math.PI * 2;
     kuiperOrbit.add(kuiper);
     scene.add(kuiperOrbit);
+    kuiperGroups.push(kuiperOrbit);
 
     // FIX: Ensure mesh is the kuiper object, and group is the orbit.
     orbitalBodies.push({
@@ -372,18 +443,33 @@ for (let i = 0; i < kuiperCount; i++) {
 function animate() {
     requestAnimationFrame(animate);
 
-    sun.rotation.y += 0.001; 
+    if (!animationPaused) {
+        sun.rotation.y += 0.001 * speedMultiplier; 
 
-    // FINAL FINAL FIX: Added checks to ensure 'body' object is fully structured before accessing properties.
-    orbitalBodies.forEach(body => {
-        // Only attempt to rotate the group (orbit) if the group exists
-        if (body && body.group) {
-            body.group.rotation.y += body.orbitSpeed; 
+        // Rotate orbital groups and bodies using the current speed multiplier
+        orbitalBodies.forEach(body => {
+            if (!body) return;
+            if (body.group) {
+                body.group.rotation.y += body.orbitSpeed * speedMultiplier; 
+            }
+            if (body.mesh) {
+                body.mesh.rotation.y += body.selfRotateSpeed * speedMultiplier;
+            }
+        });
+    }
+
+    // Update label positions and visibility
+    labelPairs.forEach(pair => {
+        if (!pair || !pair.mesh || !pair.label) return;
+        pair.label.visible = showLabels;
+        if (!showLabels) {
+            return;
         }
-        // Only attempt to rotate the mesh (self-rotation) if the mesh exists
-        if (body && body.mesh) {
-            body.mesh.rotation.y += body.selfRotateSpeed;
-        }
+        const offset = (pair.mesh.userData.radius || 1) * 2 + 0.5;
+        const worldPos = new THREE.Vector3();
+        pair.mesh.getWorldPosition(worldPos);
+        pair.label.position.copy(worldPos);
+        pair.label.position.y += offset;
     });
 
     // Handle Hover (Mousemove)
@@ -433,6 +519,11 @@ window.addEventListener('click', (event) => {
         } else {
             selectedBody = clickedObject;
             displayBodyInfo(selectedBody.userData);
+
+            // Focus the camera on the selected body
+            const worldPos = new THREE.Vector3();
+            clickedObject.getWorldPosition(worldPos);
+            controls.target.copy(worldPos);
         }
     } else {
         selectedBody = null;
@@ -442,6 +533,61 @@ window.addEventListener('click', (event) => {
 
 // Button click listener bound to the function
 document.getElementById('reset-view-button').addEventListener('click', resetView);
+
+// UI control bindings
+const toggleAnimationButton = document.getElementById('toggle-animation-button');
+const speedSelect = document.getElementById('speed-select');
+const toggleOrbitsCheckbox = document.getElementById('toggle-orbits');
+const toggleAsteroidsCheckbox = document.getElementById('toggle-asteroids');
+const toggleKuiperCheckbox = document.getElementById('toggle-kuiper');
+const toggleLabelsCheckbox = document.getElementById('toggle-labels');
+
+if (toggleAnimationButton) {
+    toggleAnimationButton.addEventListener('click', () => {
+        animationPaused = !animationPaused;
+        toggleAnimationButton.textContent = animationPaused ? 'Resume orbits' : 'Pause orbits';
+    });
+}
+
+if (speedSelect) {
+    speedSelect.addEventListener('change', (event) => {
+        const value = parseFloat(event.target.value);
+        speedMultiplier = isNaN(value) ? 1 : value;
+    });
+}
+
+if (toggleOrbitsCheckbox) {
+    toggleOrbitsCheckbox.addEventListener('change', () => {
+        const visible = toggleOrbitsCheckbox.checked;
+        orbitLines.forEach(line => {
+            if (line) line.visible = visible;
+        });
+    });
+}
+
+if (toggleAsteroidsCheckbox) {
+    toggleAsteroidsCheckbox.addEventListener('change', () => {
+        const visible = toggleAsteroidsCheckbox.checked;
+        asteroidGroups.forEach(group => {
+            if (group) group.visible = visible;
+        });
+    });
+}
+
+if (toggleKuiperCheckbox) {
+    toggleKuiperCheckbox.addEventListener('change', () => {
+        const visible = toggleKuiperCheckbox.checked;
+        kuiperGroups.forEach(group => {
+            if (group) group.visible = visible;
+        });
+    });
+}
+
+if (toggleLabelsCheckbox) {
+    toggleLabelsCheckbox.addEventListener('change', () => {
+        showLabels = toggleLabelsCheckbox.checked;
+    });
+}
 
 // Handle Window Resize
 window.addEventListener('resize', () => {
