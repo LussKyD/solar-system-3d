@@ -6,46 +6,153 @@ const EARTH_DISTANCE_SU = 8.0;
 
 // The Sun's data
 const SUN_DATA = {
-    name: "The Sun", type: 'Star', radius: 1.5, color: 0xFFA500, texture: 'textures/sun.jpg', distanceAU: 0, info: "The center of our solar system." 
+    name: "The Sun",
+    type: 'Star',
+    radius: 1.5,
+    color: 0xFFA500,
+    texture: 'textures/sun.jpg',
+    distanceAU: 0,
+    info: "The center of our solar system.",
+    radiusKm: 695700,
+    orbitalPeriodDays: null,
+    orbitalPeriodYears: null
 };
 
 // Planet Data (Note: Distances are SCALED for the camera view)
 const PLANETS = [
-    { name: "Mercury", radius: 0.2, distance: 3.0, orbitSpeed: 0.015, selfRotateSpeed: 0.02, distanceAU: 0.39, texture: 'textures/mercury.jpg' },
-    { name: "Venus", radius: 0.4, distance: 5.0, orbitSpeed: 0.008, selfRotateSpeed: 0.01, distanceAU: 0.72, texture: 'textures/venus.jpg' },
-    { name: "Earth", radius: 0.5, distance: 8.0, orbitSpeed: 0.005, selfRotateSpeed: 0.007, distanceAU: 1.00, texture: 'textures/earth.jpg', hasClouds: false },
-    { name: "Mars", radius: 0.3, distance: 12.0, orbitSpeed: 0.004, selfRotateSpeed: 0.006, distanceAU: 1.52, texture: 'textures/mars.jpg' },
-    { name: "Jupiter", radius: 1.2, distance: 25.0, orbitSpeed: 0.0008, selfRotateSpeed: 0.015, distanceAU: 5.20, texture: 'textures/jupiter.jpg' },
-    { name: "Saturn", radius: 1.0, distance: 35.0, orbitSpeed: 0.0006, selfRotateSpeed: 0.01, distanceAU: 9.58, texture: 'textures/saturn.jpg', hasRings: true },
-    { name: "Uranus", radius: 0.8, distance: 45.0, orbitSpeed: 0.0003, selfRotateSpeed: 0.005, distanceAU: 19.22, texture: 'textures/uranus.jpg' },
-    { name: "Neptune", radius: 0.8, distance: 55.0, orbitSpeed: 0.0002, selfRotateSpeed: 0.004, distanceAU: 30.05, texture: 'textures/neptune.jpg' },
+    {
+        name: "Mercury",
+        type: "Terrestrial planet",
+        radius: 0.2,
+        distance: 3.0,
+        orbitSpeed: 0.015,
+        selfRotateSpeed: 0.02,
+        distanceAU: 0.39,
+        texture: 'textures/mercury.jpg',
+        radiusKm: 2440,
+        orbitalPeriodDays: 88,
+        orbitalPeriodYears: 0.24
+    },
+    {
+        name: "Venus",
+        type: "Terrestrial planet",
+        radius: 0.4,
+        distance: 5.0,
+        orbitSpeed: 0.008,
+        selfRotateSpeed: 0.01,
+        distanceAU: 0.72,
+        texture: 'textures/venus.jpg',
+        radiusKm: 6052,
+        orbitalPeriodDays: 225,
+        orbitalPeriodYears: 0.62
+    },
+    {
+        name: "Earth",
+        type: "Terrestrial planet",
+        radius: 0.5,
+        distance: 8.0,
+        orbitSpeed: 0.005,
+        selfRotateSpeed: 0.007,
+        distanceAU: 1.00,
+        texture: 'textures/earth.jpg',
+        hasClouds: false,
+        radiusKm: 6371,
+        orbitalPeriodDays: 365,
+        orbitalPeriodYears: 1
+    },
+    {
+        name: "Mars",
+        type: "Terrestrial planet",
+        radius: 0.3,
+        distance: 12.0,
+        orbitSpeed: 0.004,
+        selfRotateSpeed: 0.006,
+        distanceAU: 1.52,
+        texture: 'textures/mars.jpg',
+        radiusKm: 3390,
+        orbitalPeriodDays: 687,
+        orbitalPeriodYears: 1.88
+    },
+    {
+        name: "Jupiter",
+        type: "Gas giant",
+        radius: 1.2,
+        distance: 25.0,
+        orbitSpeed: 0.0008,
+        selfRotateSpeed: 0.015,
+        distanceAU: 5.20,
+        texture: 'textures/jupiter.jpg',
+        radiusKm: 69911,
+        orbitalPeriodDays: 4333,
+        orbitalPeriodYears: 11.86
+    },
+    {
+        name: "Saturn",
+        type: "Gas giant",
+        radius: 1.0,
+        distance: 35.0,
+        orbitSpeed: 0.0006,
+        selfRotateSpeed: 0.01,
+        distanceAU: 9.58,
+        texture: 'textures/saturn.jpg',
+        hasRings: true,
+        radiusKm: 58232,
+        orbitalPeriodDays: 10759,
+        orbitalPeriodYears: 29.45
+    },
+    {
+        name: "Uranus",
+        type: "Ice giant",
+        radius: 0.8,
+        distance: 45.0,
+        orbitSpeed: 0.0003,
+        selfRotateSpeed: 0.005,
+        distanceAU: 19.22,
+        texture: 'textures/uranus.jpg',
+        radiusKm: 25362,
+        orbitalPeriodDays: 30687,
+        orbitalPeriodYears: 84.0
+    },
+    {
+        name: "Neptune",
+        type: "Ice giant",
+        radius: 0.8,
+        distance: 55.0,
+        orbitSpeed: 0.0002,
+        selfRotateSpeed: 0.004,
+        distanceAU: 30.05,
+        texture: 'textures/neptune.jpg',
+        radiusKm: 24622,
+        orbitalPeriodDays: 60190,
+        orbitalPeriodYears: 164.8
+    },
 ];
 
 // Data for Moons: Only Earth's moon has the 'moon.jpg' texture, the rest use solid colors.
 const MOON_SYSTEMS = {
     "Earth": [
-        { name: "Moon", radius: 0.15, distance: 1.5, orbitSpeed: 0.05, selfRotateSpeed: 0.015, texture: 'textures/moon.jpg', info: "Earth's only natural satellite." }
+        { name: "Moon", radius: 0.15, distance: 1.5, orbitSpeed: 0.05, selfRotateSpeed: 0.015, texture: 'textures/moon.jpg', info: "Earth's only natural satellite.", radiusKm: 1737, orbitalPeriodDays: 27.3 }
     ],
     "Mars": [
         // Phobos and Deimos will use solid color (no texture defined)
-        { name: "Phobos", radius: 0.08, distance: 0.5, orbitSpeed: 0.1, selfRotateSpeed: 0.05, info: "Inner, fast-orbiting moon." }, 
-        { name: "Deimos", radius: 0.05, distance: 0.9, orbitSpeed: 0.05, selfRotateSpeed: 0.03, info: "Outer, potato-shaped moon." }
+        { name: "Phobos", radius: 0.08, distance: 0.5, orbitSpeed: 0.1, selfRotateSpeed: 0.05, info: "Inner, fast-orbiting moon.", radiusKm: 11, orbitalPeriodDays: 0.3 }, 
+        { name: "Deimos", radius: 0.05, distance: 0.9, orbitSpeed: 0.05, selfRotateSpeed: 0.03, info: "Outer, potato-shaped moon.", radiusKm: 6, orbitalPeriodDays: 1.3 }
     ],
     "Jupiter": [
         // Io, Europa, Ganymede will use solid color (no texture defined)
-        { name: "Io", radius: 0.25, distance: 2.0, orbitSpeed: 0.03, selfRotateSpeed: 0.01, info: "Volcanically active." },
-        { name: "Europa", radius: 0.2, distance: 3.0, orbitSpeed: 0.02, selfRotateSpeed: 0.008, info: "Icy, possible sub-surface ocean." },
-        { name: "Ganymede", radius: 0.35, distance: 4.5, orbitSpeed: 0.015, selfRotateSpeed: 0.006, info: "Largest moon in solar system." }
+        { name: "Io", radius: 0.25, distance: 2.0, orbitSpeed: 0.03, selfRotateSpeed: 0.01, info: "Volcanically active.", radiusKm: 1821, orbitalPeriodDays: 1.8 },
+        { name: "Europa", radius: 0.2, distance: 3.0, orbitSpeed: 0.02, selfRotateSpeed: 0.008, info: "Icy, possible sub-surface ocean.", radiusKm: 1561, orbitalPeriodDays: 3.5 },
+        { name: "Ganymede", radius: 0.35, distance: 4.5, orbitSpeed: 0.015, selfRotateSpeed: 0.006, info: "Largest moon in solar system.", radiusKm: 2634, orbitalPeriodDays: 7.2 }
     ],
     "Saturn": [
-        { name: "Titan", radius: 0.45, distance: 3.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Hazy atmosphere, largest moon." },
-        { name: "Rhea", radius: 0.2, distance: 4.5, orbitSpeed: 0.008, selfRotateSpeed: 0.004, info: "Second largest moon." } 
+        { name: "Titan", radius: 0.45, distance: 3.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Hazy atmosphere, largest moon.", radiusKm: 2575, orbitalPeriodDays: 16.0 },
+        { name: "Rhea", radius: 0.2, distance: 4.5, orbitSpeed: 0.008, selfRotateSpeed: 0.004, info: "Second largest moon.", radiusKm: 764, orbitalPeriodDays: 4.5 } 
     ],
     "Uranus": [
-        { name: "Titania", radius: 0.2, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Largest moon of Uranus." } 
+        { name: "Titania", radius: 0.2, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Largest moon of Uranus.", radiusKm: 789, orbitalPeriodDays: 8.7 } 
     ],
     "Neptune": [
-        { name: "Triton", radius: 0.25, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Retrograde orbit." } 
+        { name: "Triton", radius: 0.25, distance: 2.5, orbitSpeed: 0.01, selfRotateSpeed: 0.005, info: "Retrograde orbit.", radiusKm: 1353, orbitalPeriodDays: 5.9 } 
     ]
 };
 
@@ -70,6 +177,7 @@ const textureLoader = new THREE.TextureLoader();
 let animationPaused = false;
 let speedMultiplier = 1;
 let showLabels = true;
+let cameraTransition = null;
 
 // Store initial camera state for reset function
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(0, 0, 70);
@@ -130,7 +238,7 @@ function calculateDistanceInfo(data) {
 
 function createStarfield() {
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 15000;
+    const starCount = 9000;
     const positions = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount; i++) {
@@ -270,12 +378,44 @@ function createLabelSprite(text) {
 function displayBodyInfo(data) {
     const { sunDistText, earthDistText } = calculateDistanceInfo(data);
     
-    let infoText = `Selected: **${data.name}**`;
+    const orbitalDays = data.orbitalPeriodDays;
+    const orbitalYears = data.orbitalPeriodYears;
+    const radiusKm = data.radiusKm;
+
+    let typeLabel = data.type || 'Body';
+    if (data.type === 'Moon') {
+        typeLabel = 'Moon';
+    } else if (data.type === 'Star') {
+        typeLabel = 'Star';
+    }
+
+    let infoText = `<strong>${data.name}</strong><br>`;
+    infoText += `${typeLabel}`;
 
     if (data.type === 'Star') {
-        infoText += `<br>Location: ${data.info}`;
+        infoText += `<br>${data.info}`;
     } else if (data.type === 'Moon') {
-        infoText += `<br>Orbiting: ${data.parentName}<br>${data.info}`;
+        infoText += `<br>Orbits: ${data.parentName}`;
+        if (data.info) {
+            infoText += `<br>${data.info}`;
+        }
+    } else if (data.info) {
+        infoText += `<br>${data.info}`;
+    }
+
+    if (radiusKm) {
+        infoText += `<br>Radius: ${radiusKm.toLocaleString()} km`;
+    }
+
+    if (orbitalDays || orbitalYears) {
+        const orbitalParts = [];
+        if (orbitalDays) {
+            orbitalParts.push(`${orbitalDays.toLocaleString()} days`);
+        }
+        if (orbitalYears) {
+            orbitalParts.push(`${orbitalYears} years`);
+        }
+        infoText += `<br>Orbital period: ${orbitalParts.join(" / ")}`;
     }
 
     infoText += `<br>Dist. from Sun: ${sunDistText}`;
@@ -458,6 +598,29 @@ function animate() {
         });
     }
 
+    // Smooth camera transitions for presets
+    if (cameraTransition) {
+        const now = performance.now();
+        const elapsed = now - cameraTransition.startTime;
+        const t = Math.min(1, elapsed / cameraTransition.duration);
+        const easedT = t * t * (3 - 2 * t); // smoothstep
+
+        camera.position.lerpVectors(
+            cameraTransition.startPosition,
+            cameraTransition.endPosition,
+            easedT
+        );
+        controls.target.lerpVectors(
+            cameraTransition.startTarget,
+            cameraTransition.endTarget,
+            easedT
+        );
+
+        if (t >= 1) {
+            cameraTransition = null;
+        }
+    }
+
     // Update label positions and visibility
     labelPairs.forEach(pair => {
         if (!pair || !pair.mesh || !pair.label) return;
@@ -541,6 +704,7 @@ const toggleOrbitsCheckbox = document.getElementById('toggle-orbits');
 const toggleAsteroidsCheckbox = document.getElementById('toggle-asteroids');
 const toggleKuiperCheckbox = document.getElementById('toggle-kuiper');
 const toggleLabelsCheckbox = document.getElementById('toggle-labels');
+const presetButtons = document.querySelectorAll('.preset-button');
 
 if (toggleAnimationButton) {
     toggleAnimationButton.addEventListener('click', () => {
@@ -586,6 +750,38 @@ if (toggleKuiperCheckbox) {
 if (toggleLabelsCheckbox) {
     toggleLabelsCheckbox.addEventListener('change', () => {
         showLabels = toggleLabelsCheckbox.checked;
+    });
+}
+
+// Camera preset helper
+function startCameraTransition(targetPosition, targetLookAt, durationMs) {
+    cameraTransition = {
+        startTime: performance.now(),
+        duration: durationMs,
+        startPosition: camera.position.clone(),
+        endPosition: targetPosition.clone(),
+        startTarget: controls.target.clone(),
+        endTarget: targetLookAt.clone()
+    };
+}
+
+if (presetButtons && presetButtons.length) {
+    presetButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const preset = btn.getAttribute('data-preset');
+            const duration = 1200;
+            const center = new THREE.Vector3(0, 0, 0);
+
+            if (preset === 'inner') {
+                startCameraTransition(new THREE.Vector3(0, 10, 35), center, duration);
+            } else if (preset === 'giants') {
+                startCameraTransition(new THREE.Vector3(0, 15, 60), center, duration);
+            } else if (preset === 'outer') {
+                startCameraTransition(new THREE.Vector3(0, 40, 120), center, duration);
+            } else if (preset === 'top') {
+                startCameraTransition(new THREE.Vector3(0, 120, 0), center, duration);
+            }
+        });
     });
 }
 

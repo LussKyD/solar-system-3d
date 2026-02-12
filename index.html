@@ -10,7 +10,7 @@
     <div id="info-panel">
         <h1>Solar System 3D Explorer</h1>
         <p>Click and drag to orbit. Scroll to zoom. Right-click or Ctrl+drag to pan.</p>
-        <p>Hover to preview, click to lock a body.</p>
+        <p>Hover to preview, click to lock a body. Use presets below to jump around the system.</p>
 
         <div id="selection-display">
             Hover over a planet or the Sun!
@@ -46,6 +46,14 @@
                     <input type="checkbox" id="toggle-labels" checked>
                     Labels
                 </label>
+            </div>
+
+            <div class="controls-row presets-row">
+                <span class="controls-label">Presets:</span>
+                <button class="preset-button" data-preset="inner">Inner system</button>
+                <button class="preset-button" data-preset="giants">Gas giants</button>
+                <button class="preset-button" data-preset="outer">Outer system</button>
+                <button class="preset-button" data-preset="top">Top view</button>
             </div>
         </div>
     </div>

@@ -67,6 +67,10 @@ canvas {
     gap: 8px;
 }
 
+.controls-row.presets-row {
+    margin-top: 2px;
+}
+
 .controls-row label {
     display: inline-flex;
     align-items: center;
@@ -77,6 +81,12 @@ canvas {
 
 .inline-label {
     margin-left: 4px;
+}
+
+.controls-label {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin-right: 2px;
 }
 
 button,
@@ -146,10 +156,28 @@ input[type="checkbox"] {
     #info-panel {
         max-width: 260px;
         padding: 10px 12px;
+        top: 8px;
+        left: 8px;
     }
 
     #reset-view-button {
         font-size: 0.75rem;
         padding: 5px 10px;
+        top: 8px;
+        right: 8px;
+    }
+
+    .controls-row {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .controls-row.presets-row {
+        flex-wrap: wrap;
+    }
+
+    button,
+    select {
+        font-size: 0.72rem;
     }
 }
