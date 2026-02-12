@@ -613,7 +613,6 @@ const orbitLines = [];
 const asteroidGroups = [];
 const kuiperGroups = [];
 const labelPairs = [];
-const missionObjects = [];
 let moonMesh = null;
 let earthMesh = null;
 
@@ -658,7 +657,6 @@ let animationPaused = false;
 let speedMultiplier = 1;
 let showLabels = true;
 let cameraTransition = null;
-let showMissions = true;
 
 // Store initial camera state for reset function
 const INITIAL_CAMERA_POSITION = new THREE.Vector3(0, 0, 70);
@@ -934,233 +932,6 @@ function displayBodyInfo(data) {
     selectionDisplay.innerHTML = infoText;
 }
 
-// Program key for mission icon style (like the lunar landings map: USSR, China, USA Apollo, USA Surveyor, etc.)
-function getMissionProgram(mission) {
-    const a = (mission.agency || '').toLowerCase();
-    const n = (mission.name || '').toLowerCase();
-    if (a.includes('soviet') || a.includes('ussr') || n.includes('luna') || n.includes('sputnik') || n.includes('venera')) return 'ussr';
-    if (a.includes('china') || a.includes('cnsa') || n.includes('chang')) return 'china';
-    if (n.includes('surveyor')) return 'usa_surveyor';
-    if (n.includes('apollo')) return 'usa_apollo';
-    if (a.includes('nasa') || a.includes('usa')) return 'usa_other';
-    return 'other';
-}
-
-// Canvas texture for program-specific mission icon (flag-style like lunar landings map)
-function createMissionIconTexture(program) {
-    const size = 64;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const cx = size / 2;
-    const cy = size / 2;
-    const r = size / 2 - 2;
-
-    if (program === 'ussr') {
-        ctx.fillStyle = '#c41e3a';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fcd116';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = '#fcd116';
-        ctx.strokeStyle = '#fcd116';
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx - 12, cy + 10);
-        ctx.lineTo(cx + 12, cy - 8);
-        ctx.moveTo(cx - 8, cy - 12);
-        ctx.lineTo(cx + 10, cy + 12);
-        ctx.stroke();
-    } else if (program === 'china') {
-        ctx.fillStyle = '#de2910';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#ffde00';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = '#ffde00';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - 14);
-        for (let i = 1; i <= 5; i++) {
-            const a = (i * 2 * Math.PI / 5) - Math.PI / 2;
-            ctx.lineTo(cx + 14 * Math.cos(a), cy + 14 * Math.sin(a));
-        }
-        ctx.closePath();
-        ctx.fill();
-    } else if (program === 'usa_apollo') {
-        ctx.fillStyle = '#b22234';
-        ctx.fillRect(0, 0, size, size);
-        const stripeH = size / 13;
-        for (let i = 0; i < 13; i++) {
-            ctx.fillStyle = (i % 2 === 0) ? '#b22234' : '#fff';
-            ctx.fillRect(0, i * stripeH, size, stripeH);
-        }
-        ctx.fillStyle = '#3c3b6e';
-        ctx.fillRect(0, 0, size * 0.4, stripeH * 7);
-        ctx.fillStyle = '#fff';
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 6; col++) {
-                ctx.beginPath();
-                ctx.arc(8 + col * 5.5, 6 + row * 5.5, 1.2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 5; col++) {
-                ctx.beginPath();
-                ctx.arc(10.5 + col * 5.5, 8.5 + row * 5.5, 1.2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-    } else if (program === 'usa_surveyor') {
-        ctx.fillStyle = '#002868';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - r);
-        for (let i = 1; i <= 3; i++) {
-            const a = (i * 2 * Math.PI / 3) - Math.PI / 2;
-            ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = '#bf0a30';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (program === 'usa_other') {
-        ctx.fillStyle = '#0b3d91';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('NASA', cx, cy);
-    } else {
-        ctx.fillStyle = '#475569';
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = '#e2e8f0';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('◆', cx, cy);
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.needsUpdate = true;
-    return tex;
-}
-
-// Create mission markers and attach them to appropriate bodies or free space
-function createMissionMarkers() {
-    MISSIONS.forEach(mission => {
-        const program = getMissionProgram(mission);
-        const iconSize = 0.5;
-        const map = createMissionIconTexture(program);
-        const material = new THREE.SpriteMaterial({
-            map: map,
-            transparent: true,
-            depthWrite: false
-        });
-        const marker = new THREE.Sprite(material);
-        marker.scale.set(iconSize, iconSize, 1);
-
-        let parentGroup = null;
-        if (mission.attachTo) {
-            const targetBody = orbitalBodies.find(b => b.name === mission.attachTo);
-            if (targetBody && targetBody.mesh) {
-                parentGroup = targetBody.mesh;
-            }
-        }
-
-        if (mission.target === 'Earth' || mission.target === 'Moon') {
-            const earthBody = orbitalBodies.find(b => b.name === 'Earth');
-            if (earthBody && earthBody.mesh) {
-                const parent = mission.target === 'Moon' && moonMesh ? moonMesh : earthBody.mesh;
-
-                const radiusOffset = (parent.userData.radius || 1) + (mission.altitudeKm ? 0.5 : 0.3);
-                const incRad = (mission.inclinationDeg || 0) * Math.PI / 180;
-                const lonRad = (mission.longitudeDeg || 0) * Math.PI / 180;
-
-                const x = radiusOffset * Math.cos(incRad) * Math.cos(lonRad);
-                const y = radiusOffset * Math.sin(incRad);
-                const z = radiusOffset * Math.cos(incRad) * Math.sin(lonRad);
-
-                marker.position.set(x, y, z);
-                parent.add(marker);
-            }
-        } else if (mission.radialDistance) {
-            const r = mission.radialDistance;
-            const polar = (mission.polarAngleDeg || 60) * Math.PI / 180;
-            const az = (mission.azimuthDeg || 0) * Math.PI / 180;
-
-            const x = r * Math.sin(polar) * Math.cos(az);
-            const y = r * Math.cos(polar);
-            const z = r * Math.sin(polar) * Math.sin(az);
-
-            marker.position.set(x, y, z);
-            scene.add(marker);
-        } else if (mission.target === 'Mars' || mission.target === 'Venus') {
-            const body = orbitalBodies.find(b => b.name === mission.target);
-            if (body && body.mesh) {
-                const baseRadius = body.mesh.position.x;
-                const offset = mission.orbitalRadiusOffset || 0.5;
-                const angleRad = (mission.alongOrbitDeg || 0) * Math.PI / 180;
-                const r = baseRadius + offset;
-
-                const x = r * Math.cos(angleRad);
-                const z = r * Math.sin(angleRad);
-
-                marker.position.set(x, 0.2, z);
-                scene.add(marker);
-            }
-        } else if (parentGroup) {
-            const r = (parentGroup.userData.radius || 1) + (mission.radialOffset || 2.0);
-            const angleRad = (mission.angleDeg || 0) * Math.PI / 180;
-            marker.position.set(r * Math.cos(angleRad), 0.3, r * Math.sin(angleRad));
-            parentGroup.add(marker);
-        } else {
-            marker.position.set(0, 0, 0);
-            scene.add(marker);
-        }
-
-        marker.userData = {
-            id: mission.id,
-            name: mission.name,
-            type: 'Mission',
-            missionType: mission.type,
-            agency: mission.agency,
-            year: mission.year,
-            status: mission.status,
-            info: mission.description || '',
-            distanceAU: 0,
-            parentAU: 0,
-            parentName: mission.target
-        };
-
-        selectableObjects.push(marker);
-        missionObjects.push(marker);
-    });
-}
-
-
 // Build HTML for the detail modal (study view)
 function buildDetailContent(data) {
     if (!data) return '';
@@ -1418,11 +1189,30 @@ function populateBodyModal(data) {
     const missionsForBody = MISSIONS.filter(m => m.target === bodyName || m.attachTo === bodyName);
     if (missionsEl) {
         if (missionsForBody.length) {
-            missionsEl.innerHTML = missionsForBody.map(m =>
-                `<div class="mission-row"><strong>${m.name}</strong> · ${m.agency || '—'} (${m.year || '—'}) — ${m.type}</div>`
+            missionsEl.innerHTML = missionsForBody.map((m, idx) =>
+                `<div class="mission-row selectable" data-mission-index="${idx}" data-mission-id="${m.id || ''}"><strong>${m.name}</strong> · ${m.agency || '—'} (${m.year || '—'}) — ${m.type}</div>`
             ).join('');
+            missionsEl._missionsData = missionsForBody;
+            missionsEl.querySelectorAll('.mission-row.selectable').forEach(row => {
+                row.addEventListener('click', () => {
+                    missionsEl.querySelectorAll('.mission-row.selected').forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                    const idx = parseInt(row.getAttribute('data-mission-index'), 10);
+                    const mission = missionsForBody[idx];
+                    let detailEl = missionsEl.querySelector('.mission-selected-detail');
+                    if (!detailEl) {
+                        detailEl = document.createElement('div');
+                        detailEl.className = 'mission-selected-detail';
+                        missionsEl.appendChild(detailEl);
+                    }
+                    const desc = mission.description || mission.status || 'No additional details.';
+                    detailEl.innerHTML = `<p class="mission-detail-text">${desc}</p>`;
+                    detailEl.classList.remove('hidden');
+                });
+            });
         } else {
             missionsEl.innerHTML = '<div class="mission-row">No missions in database for this body.</div>';
+            missionsEl._missionsData = [];
         }
     }
 }
@@ -1625,9 +1415,6 @@ for (let i = 0; i < kuiperCount; i++) {
         selfRotateSpeed: 0.0
     });
 }
-
-// 3e. Missions (markers attached to bodies or free-flying)
-createMissionMarkers();
 
 // --- 4. ANIMATION AND INTERACTION LOOP ---
 
@@ -1887,7 +1674,6 @@ const toggleOrbitsCheckbox = document.getElementById('toggle-orbits');
 const toggleAsteroidsCheckbox = document.getElementById('toggle-asteroids');
 const toggleKuiperCheckbox = document.getElementById('toggle-kuiper');
 const toggleLabelsCheckbox = document.getElementById('toggle-labels');
-const toggleMissionsCheckbox = document.getElementById('toggle-missions');
 const presetButtons = document.querySelectorAll('.preset-button');
 
 if (toggleAnimationButton) {
@@ -1934,17 +1720,6 @@ if (toggleKuiperCheckbox) {
 if (toggleLabelsCheckbox) {
     toggleLabelsCheckbox.addEventListener('change', () => {
         showLabels = toggleLabelsCheckbox.checked;
-    });
-}
-
-if (toggleMissionsCheckbox) {
-    toggleMissionsCheckbox.addEventListener('change', () => {
-        showMissions = toggleMissionsCheckbox.checked;
-        missionObjects.forEach(marker => {
-            if (marker) {
-                marker.visible = showMissions;
-            }
-        });
     });
 }
 

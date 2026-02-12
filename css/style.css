@@ -493,6 +493,41 @@ input[type="checkbox"] {
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 .modal-missions-list .mission-row:last-child { border-bottom: none; }
+.modal-missions-list .mission-row.selectable {
+    cursor: pointer;
+    padding: 8px 10px;
+    margin: 0 -10px;
+    border-radius: 8px;
+    border-bottom: none;
+    transition: background 0.15s, color 0.15s;
+}
+.modal-missions-list .mission-row.selectable:hover {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1e40af;
+}
+.modal-missions-list .mission-row.selectable.selected {
+    background: rgba(59, 130, 246, 0.2);
+    color: #1e3a8a;
+    border-left: 3px solid #3b82f6;
+    margin-left: -10px;
+    padding-left: 14px;
+}
+.modal-missions-list .mission-selected-detail {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #475569;
+    line-height: 1.45;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.modal-missions-list .mission-selected-detail.hidden {
+    display: none;
+}
+.modal-missions-list .mission-detail-text {
+    margin: 0;
+}
 
 /* Glassmorphic body panel (right side, mission-control style) */
 .body-panel {
