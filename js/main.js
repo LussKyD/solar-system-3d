@@ -544,6 +544,62 @@ const MISSIONS = [
     }
 ];
 
+// Learn-more links for every selectable (Wikipedia / official). Key by name for bodies, by id for missions.
+const BODY_LINKS = {
+    'The Sun': 'https://en.wikipedia.org/wiki/Sun',
+    'Mercury': 'https://en.wikipedia.org/wiki/Mercury_(planet)',
+    'Venus': 'https://en.wikipedia.org/wiki/Venus',
+    'Earth': 'https://en.wikipedia.org/wiki/Earth',
+    'Mars': 'https://en.wikipedia.org/wiki/Mars',
+    'Jupiter': 'https://en.wikipedia.org/wiki/Jupiter',
+    'Saturn': 'https://en.wikipedia.org/wiki/Saturn',
+    'Uranus': 'https://en.wikipedia.org/wiki/Uranus',
+    'Neptune': 'https://en.wikipedia.org/wiki/Neptune',
+    'Moon': 'https://en.wikipedia.org/wiki/Moon',
+    'Phobos': 'https://en.wikipedia.org/wiki/Phobos_(moon)',
+    'Deimos': 'https://en.wikipedia.org/wiki/Deimos_(moon)',
+    'Io': 'https://en.wikipedia.org/wiki/Io_(moon)',
+    'Europa': 'https://en.wikipedia.org/wiki/Europa_(moon)',
+    'Ganymede': 'https://en.wikipedia.org/wiki/Ganymede_(moon)',
+    'Titan': 'https://en.wikipedia.org/wiki/Titan_(moon)',
+    'Rhea': 'https://en.wikipedia.org/wiki/Rhea_(moon)',
+    'Titania': 'https://en.wikipedia.org/wiki/Titania_(moon)',
+    'Triton': 'https://en.wikipedia.org/wiki/Triton_(moon)'
+};
+const MISSION_LINKS = {
+    'sputnik-1': 'https://en.wikipedia.org/wiki/Sputnik_1',
+    'apollo-11': 'https://en.wikipedia.org/wiki/Apollo_11',
+    'apollo-12': 'https://en.wikipedia.org/wiki/Apollo_12',
+    'apollo-13': 'https://en.wikipedia.org/wiki/Apollo_13',
+    'apollo-14': 'https://en.wikipedia.org/wiki/Apollo_14',
+    'apollo-15': 'https://en.wikipedia.org/wiki/Apollo_15',
+    'apollo-16': 'https://en.wikipedia.org/wiki/Apollo_16',
+    'apollo-17': 'https://en.wikipedia.org/wiki/Apollo_17',
+    'luna-2': 'https://en.wikipedia.org/wiki/Luna_2',
+    'luna-9': 'https://en.wikipedia.org/wiki/Luna_9',
+    'luna-15': 'https://en.wikipedia.org/wiki/Luna_15',
+    'chang-e-3': 'https://en.wikipedia.org/wiki/Chang%27e_3',
+    'chang-e-4': 'https://en.wikipedia.org/wiki/Chang%27e_4',
+    'chandrayaan-2': 'https://en.wikipedia.org/wiki/Chandrayaan-2',
+    'iss': 'https://en.wikipedia.org/wiki/International_Space_Station',
+    'hubble': 'https://en.wikipedia.org/wiki/Hubble_Space_Telescope',
+    'viking-1': 'https://en.wikipedia.org/wiki/Viking_1',
+    'venera-7': 'https://en.wikipedia.org/wiki/Venera_7',
+    'mars-climate-orbiter': 'https://en.wikipedia.org/wiki/Mars_Climate_Orbiter',
+    'sojourner': 'https://en.wikipedia.org/wiki/Mars_Pathfinder',
+    'spirit': 'https://en.wikipedia.org/wiki/Spirit_(rover)',
+    'opportunity': 'https://en.wikipedia.org/wiki/Opportunity_(rover)',
+    'curiosity': 'https://en.wikipedia.org/wiki/Curiosity_(rover)',
+    'perseverance': 'https://en.wikipedia.org/wiki/Perseverance_(rover)',
+    'voyager-1': 'https://en.wikipedia.org/wiki/Voyager_1',
+    'voyager-2': 'https://en.wikipedia.org/wiki/Voyager_2',
+    'pioneer-10': 'https://en.wikipedia.org/wiki/Pioneer_10',
+    'cassini-huygens': 'https://en.wikipedia.org/wiki/Cassini%E2%80%93Huygens',
+    'juno': 'https://en.wikipedia.org/wiki/Juno_(spacecraft)',
+    'new-horizons': 'https://en.wikipedia.org/wiki/New_Horizons',
+    'hayabusa2': 'https://en.wikipedia.org/wiki/Hayabusa2',
+    'rosetta': 'https://en.wikipedia.org/wiki/Rosetta_(spacecraft)'
+};
 
 // --- Global Variables for Three.js and Interaction ---
 const raycaster = new THREE.Raycaster();
@@ -1055,6 +1111,7 @@ function createMissionMarkers() {
         }
 
         marker.userData = {
+            id: mission.id,
             name: mission.name,
             type: 'Mission',
             missionType: mission.type,
@@ -1079,6 +1136,10 @@ function buildDetailContent(data) {
     const name = data.name || 'Unknown';
     const typeLabel = data.type || 'Body';
     let html = `<h2>${name}</h2><p class="detail-type">${typeLabel}</p>`;
+    if (data.missionType && data.parentName) {
+        const siteLabel = data.parentName === 'Moon' ? 'Lunar site' : data.parentName === 'Earth' ? 'Earth orbit' : data.parentName;
+        html += `<p class="detail-site"><strong>Site:</strong> ${siteLabel} — ${data.missionType}</p>`;
+    }
     if (data.agency) html += `<p><strong>Agency:</strong> ${data.agency}</p>`;
     if (data.year || data.launchYear) html += `<p><strong>Launch year:</strong> ${data.year || data.launchYear}</p>`;
     if (data.status) html += `<p><strong>Status:</strong> ${data.status}</p>`;
@@ -1096,14 +1157,37 @@ function buildDetailContent(data) {
         html += `<p><strong>Distance from Earth:</strong> ${earthDistText}</p>`;
     }
     if (data.parentName && data.type === 'Moon') html += `<p><strong>Orbits:</strong> ${data.parentName}</p>`;
+    const link = data.url || BODY_LINKS[data.name] || (data.id && MISSION_LINKS[data.id]);
+    if (link) html += `<p class="detail-link"><a href="${link}" target="_blank" rel="noopener noreferrer">Learn more →</a></p>`;
     return html;
 }
 
-function openDetailModal(content) {
+function openDetailModal(content, screenX, screenY) {
     if (!detailModal || !detailBody) return;
     detailBody.innerHTML = content;
+    const contentEl = detailModal.querySelector('.detail-content');
     detailModal.classList.remove('hidden');
     detailModal.setAttribute('aria-hidden', 'false');
+    if (contentEl) {
+        contentEl.removeAttribute('style');
+        detailModal.classList.remove('detail-modal--beside');
+    }
+    if (typeof screenX === 'number' && typeof screenY === 'number' && contentEl) {
+        const pad = 16;
+        const maxW = 520;
+        const maxH = 0.85 * window.innerHeight;
+        let left = screenX + pad;
+        let top = screenY - 40;
+        if (left + maxW > window.innerWidth - pad) left = screenX - maxW - pad;
+        if (left < pad) left = pad;
+        if (top < pad) top = pad;
+        if (top + maxH > window.innerHeight - pad) top = window.innerHeight - maxH - pad;
+        contentEl.style.left = left + 'px';
+        contentEl.style.top = top + 'px';
+        contentEl.style.maxWidth = maxW + 'px';
+        contentEl.style.maxHeight = maxH + 'px';
+        detailModal.classList.add('detail-modal--beside');
+    }
 }
 
 function closeDetailModal() {
@@ -1395,16 +1479,24 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Double-click: open detail modal for study
+// Double-click: open detail popup beside the selected object (same style as modal, positioned next to dot)
 window.addEventListener('dblclick', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(selectableObjects);
     if (intersects.length > 0) {
-        const data = intersects[0].object.userData;
+        const obj = intersects[0].object;
+        const data = obj.userData;
         const content = buildDetailContent(data);
-        if (content) openDetailModal(content);
+        if (content) {
+            const worldPos = new THREE.Vector3();
+            obj.getWorldPosition(worldPos);
+            worldPos.project(camera);
+            const screenX = (worldPos.x + 1) * 0.5 * window.innerWidth;
+            const screenY = (1 - worldPos.y) * 0.5 * window.innerHeight;
+            openDetailModal(content, screenX, screenY);
+        }
     }
 });
 

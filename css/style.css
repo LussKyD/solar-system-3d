@@ -167,6 +167,18 @@ input[type="checkbox"] {
     display: none;
 }
 
+/* When popup is beside the object (double-click on dot/planet) */
+.detail-modal.detail-modal--beside {
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+.detail-modal.detail-modal--beside .detail-overlay {
+    background: rgba(0, 0, 0, 0.35);
+}
+.detail-modal.detail-modal--beside .detail-content {
+    position: fixed;
+}
+
 .detail-overlay {
     position: absolute;
     inset: 0;
@@ -233,6 +245,24 @@ input[type="checkbox"] {
 
 #detail-body .detail-section strong {
     color: #cbd5e1;
+}
+
+#detail-body .detail-site {
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+#detail-body .detail-link {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+#detail-body .detail-link a {
+    color: #38bdf8;
+    text-decoration: none;
+}
+#detail-body .detail-link a:hover {
+    text-decoration: underline;
 }
 
 /* Basic responsiveness */
