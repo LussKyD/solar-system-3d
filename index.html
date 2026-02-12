@@ -10,7 +10,7 @@
     <div id="info-panel">
         <h1>Solar System 3D Explorer</h1>
         <p>Click and drag to orbit. Scroll to zoom. Right-click or Ctrl+drag to pan.</p>
-        <p>Hover to preview, click to lock. <strong>Double-click</strong> a planet or moon to zoom in and open the data panel (landing/launch sites). Use presets below to jump around the system.</p>
+        <p>Hover to preview, click to lock. <strong>Double-click</strong> a planet or moon to open the focus modal: 3D body, missions/sites, zoom and rotate controls. Use presets below to jump around the system.</p>
 
         <div id="selection-display">
             Hover over a planet or the Sun!
@@ -68,6 +68,35 @@
 
     <!-- Focus overlay: darkens scene when a body is focused (double-click) -->
     <div id="focus-overlay" class="focus-overlay hidden" aria-hidden="true"></div>
+
+    <!-- White modal overlay (Google-style: body in modal, info panel, zoom/rotate) -->
+    <div id="body-modal" class="body-modal hidden" aria-hidden="true">
+        <div class="body-modal-backdrop"></div>
+        <div class="body-modal-card">
+            <button type="button" class="body-modal-close" id="body-modal-close" aria-label="Close">×</button>
+            <div class="body-modal-globe-wrap">
+                <div class="body-modal-controls">
+                    <button type="button" class="modal-btn modal-rotate" id="modal-rotate" aria-label="Rotate">↻</button>
+                    <button type="button" class="modal-btn modal-zoom-in" id="modal-zoom-in" aria-label="Zoom in">+</button>
+                    <button type="button" class="modal-btn modal-zoom-out" id="modal-zoom-out" aria-label="Zoom out">−</button>
+                </div>
+                <div id="modal-globe-view" class="modal-globe-view"></div>
+                <div id="modal-marker-tooltip" class="modal-marker-tooltip hidden">Missions</div>
+            </div>
+            <div class="body-modal-info">
+                <h2 id="modal-body-title" class="modal-title">—</h2>
+                <p id="modal-body-subtitle" class="modal-subtitle">From our project</p>
+                <div class="modal-fact-card" id="modal-fact-card"></div>
+                <p id="modal-body-description" class="modal-description"></p>
+                <div class="modal-collapsible-section">
+                    <details open>
+                        <summary>Missions</summary>
+                        <div id="modal-missions-list" class="modal-missions-list"></div>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Glassmorphic side panel (slides in from right when body focused) -->
     <div id="body-panel" class="body-panel hidden" aria-hidden="true">

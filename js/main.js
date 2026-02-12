@@ -640,7 +640,18 @@ const detailCloseBtn = document.getElementById('detail-close');
 const focusOverlay = document.getElementById('focus-overlay');
 const bodyPanel = document.getElementById('body-panel');
 const bodyPanelCloseBtn = document.getElementById('body-panel-close');
-const textureLoader = new THREE.TextureLoader(); 
+const bodyModal = document.getElementById('body-modal');
+const bodyModalCloseBtn = document.getElementById('body-modal-close');
+const modalGlobeView = document.getElementById('modal-globe-view');
+const modalMarkerTooltip = document.getElementById('modal-marker-tooltip');
+const textureLoader = new THREE.TextureLoader();
+
+let modalRenderer = null;
+let modalCamera = null;
+let modalZoomDistance = 3;
+let modalAngle = 0;
+const MODAL_ZOOM_MIN = 1.5;
+const MODAL_ZOOM_MAX = 12; 
 
 // Animation / controls state
 let animationPaused = false;
@@ -1368,9 +1379,97 @@ function closeBodyPanel() {
     if (bodyPanel) bodyPanel.classList.add('hidden');
 }
 
+function ensureModalRenderer() {
+    if (!modalGlobeView || modalRenderer) return;
+    const w = modalGlobeView.clientWidth || 400;
+    const h = modalGlobeView.clientHeight || 360;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    modalGlobeView.appendChild(canvas);
+    modalRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    modalRenderer.setSize(w, h);
+    modalRenderer.setClearColor(0x1e293b, 0.15);
+    modalCamera = new THREE.PerspectiveCamera(50, w / h, 0.01, 1000);
+}
+
+function populateBodyModal(data) {
+    if (!bodyModal) return;
+    const titleEl = document.getElementById('modal-body-title');
+    const subtitleEl = document.getElementById('modal-body-subtitle');
+    const factEl = document.getElementById('modal-fact-card');
+    const descEl = document.getElementById('modal-body-description');
+    const missionsEl = document.getElementById('modal-missions-list');
+    if (!titleEl) return;
+
+    titleEl.textContent = data.name || '—';
+    if (subtitleEl) subtitleEl.textContent = 'From our project';
+
+    const facts = [];
+    if (data.radiusKm) facts.push(`Radius: ${data.radiusKm.toLocaleString()} km`);
+    if (data.orbitalPeriodDays) facts.push(`Orbital period: ${data.orbitalPeriodDays} days`);
+    if (data.orbitalPeriodYears) facts.push(`Orbital period: ${data.orbitalPeriodYears} years`);
+    if (data.parentName && data.type === 'Moon') facts.push(`Orbits: ${data.parentName}`);
+    if (factEl) factEl.textContent = facts.length ? facts.join(' · ') : (data.info || 'Select a body to see key facts.');
+
+    if (descEl) descEl.textContent = data.info || (data.type === 'Star' ? 'The center of our solar system.' : 'Explore missions and sites in the list below.');
+
+    const bodyName = data.name;
+    const missionsForBody = MISSIONS.filter(m => m.target === bodyName || m.attachTo === bodyName);
+    if (missionsEl) {
+        if (missionsForBody.length) {
+            missionsEl.innerHTML = missionsForBody.map(m =>
+                `<div class="mission-row"><strong>${m.name}</strong> · ${m.agency || '—'} (${m.year || '—'}) — ${m.type}</div>`
+            ).join('');
+        } else {
+            missionsEl.innerHTML = '<div class="mission-row">No missions in database for this body.</div>';
+        }
+    }
+}
+
+function openBodyModal(mesh) {
+    if (!mesh || !mesh.userData) return;
+    const data = mesh.userData;
+    focusedBody = mesh;
+    modalZoomDistance = Math.max(MODAL_ZOOM_MIN, Math.min(MODAL_ZOOM_MAX, (data.radius || 0.5) * 6));
+    modalAngle = 0;
+
+    if (focusOverlay) focusOverlay.classList.remove('hidden');
+    if (bodyModal) bodyModal.classList.remove('hidden');
+    populateBodyModal(data);
+    createSurfaceMarkers(data.name, mesh);
+
+    ensureModalRenderer();
+    if (modalGlobeView && modalRenderer) {
+        const w = modalGlobeView.clientWidth || 400;
+        const h = modalGlobeView.clientHeight || 360;
+        modalRenderer.setSize(w, h);
+        modalRenderer.domElement.width = w;
+        modalRenderer.domElement.height = h;
+        modalCamera.aspect = w / h;
+        modalCamera.updateProjectionMatrix();
+    }
+
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    const dist = getZoomDistanceForBody(data.radius);
+    const dir = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
+    const targetPos = worldPos.clone().add(dir.multiplyScalar(dist));
+    startCameraTransition(targetPos, worldPos.clone(), 1200);
+}
+
+function closeBodyModal() {
+    focusedBody = null;
+    clearSurfaceMarkers();
+    if (focusOverlay) focusOverlay.classList.add('hidden');
+    if (bodyModal) bodyModal.classList.add('hidden');
+    if (modalMarkerTooltip) modalMarkerTooltip.classList.add('hidden');
+}
+
 // Function to reset the view
 function resetView() {
     closeBodyPanel();
+    closeBodyModal();
     controls.reset(); 
     camera.position.copy(INITIAL_CAMERA_POSITION);
     controls.target.copy(INITIAL_CONTROLS_TARGET);
@@ -1587,6 +1686,26 @@ function animate() {
         pair.label.position.y += offset;
     });
 
+    // Modal view: render focused body with second camera into modal canvas
+    if (bodyModal && !bodyModal.classList.contains('hidden') && focusedBody && modalRenderer && modalCamera && modalGlobeView) {
+        const cw = modalGlobeView.clientWidth || 400;
+        const ch = modalGlobeView.clientHeight || 360;
+        if (modalRenderer.domElement.width !== cw || modalRenderer.domElement.height !== ch) {
+            modalRenderer.setSize(cw, ch);
+            modalRenderer.domElement.width = cw;
+            modalRenderer.domElement.height = ch;
+            modalCamera.aspect = cw / ch;
+            modalCamera.updateProjectionMatrix();
+        }
+        const worldPos = new THREE.Vector3();
+        focusedBody.getWorldPosition(worldPos);
+        const dx = modalZoomDistance * Math.sin(modalAngle);
+        const dz = modalZoomDistance * Math.cos(modalAngle);
+        modalCamera.position.set(worldPos.x + dx, worldPos.y + modalZoomDistance * 0.15, worldPos.z + dz);
+        modalCamera.lookAt(worldPos);
+        modalRenderer.render(scene, modalCamera);
+    }
+
     // Handle Hover (Mousemove)
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(selectableObjects);
@@ -1665,7 +1784,7 @@ window.addEventListener('dblclick', (event) => {
         const data = obj.userData;
         const isCelestial = data && data.type && data.type !== 'Mission';
         if (isCelestial) {
-            openBodyPanel(obj);
+            openBodyModal(obj);
         } else {
             const content = buildDetailContent(data);
             if (content) {
@@ -1689,7 +1808,60 @@ if (detailModal) {
 
 // Body panel close and overlay click
 if (bodyPanelCloseBtn) bodyPanelCloseBtn.addEventListener('click', closeBodyPanel);
-if (focusOverlay) focusOverlay.addEventListener('click', closeBodyPanel);
+if (focusOverlay) focusOverlay.addEventListener('click', () => { closeBodyPanel(); closeBodyModal(); });
+
+// White modal: close, backdrop, zoom, rotate
+if (bodyModalCloseBtn) bodyModalCloseBtn.addEventListener('click', closeBodyModal);
+if (bodyModal) {
+    const backdrop = bodyModal.querySelector('.body-modal-backdrop');
+    if (backdrop) backdrop.addEventListener('click', closeBodyModal);
+}
+document.getElementById('modal-zoom-in')?.addEventListener('click', () => {
+    modalZoomDistance = Math.max(MODAL_ZOOM_MIN, modalZoomDistance / 1.25);
+});
+document.getElementById('modal-zoom-out')?.addEventListener('click', () => {
+    modalZoomDistance = Math.min(MODAL_ZOOM_MAX, modalZoomDistance * 1.25);
+});
+document.getElementById('modal-rotate')?.addEventListener('click', () => {
+    modalAngle += 0.4;
+});
+
+// Modal globe: tooltip when hovering over surface markers
+function updateModalMarkerTooltip(clientX, clientY) {
+    if (!modalMarkerTooltip || !modalRenderer || !modalCamera || !focusedBody) return;
+    const canvas = modalRenderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (x < 0 || x > rect.width || y < 0 || y > rect.height) {
+        modalMarkerTooltip.classList.add('hidden');
+        return;
+    }
+    const ndcX = (x / rect.width) * 2 - 1;
+    const ndcY = -(y / rect.height) * 2 + 1;
+    let found = null;
+    const threshold = 0.08;
+    for (let i = 0; i < surfaceMarkersList.length; i++) {
+        const m = surfaceMarkersList[i];
+        const p = new THREE.Vector3();
+        m.getWorldPosition(p);
+        p.project(modalCamera);
+        if (Math.abs(p.x - ndcX) < threshold && Math.abs(p.y - ndcY) < threshold) {
+            found = m.userData;
+            break;
+        }
+    }
+    if (found) {
+        modalMarkerTooltip.textContent = found.name || 'Missions';
+        modalMarkerTooltip.classList.remove('hidden');
+    } else {
+        modalMarkerTooltip.classList.add('hidden');
+    }
+}
+if (modalGlobeView) {
+    modalGlobeView.addEventListener('mousemove', (e) => { updateModalMarkerTooltip(e.clientX, e.clientY); });
+    modalGlobeView.addEventListener('mouseleave', () => { if (modalMarkerTooltip) modalMarkerTooltip.classList.add('hidden'); });
+}
 
 // Body panel tabs
 if (bodyPanel) {
