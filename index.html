@@ -10,7 +10,7 @@
     <div id="info-panel">
         <h1>Solar System 3D Explorer</h1>
         <p>Click and drag to orbit. Scroll to zoom. Right-click or Ctrl+drag to pan.</p>
-        <p>Hover to preview, click to lock. <strong>Double-click</strong> any body to open a detail view. Use presets below to jump around the system.</p>
+        <p>Hover to preview, click to lock. <strong>Double-click</strong> a planet or moon to zoom in and open the data panel (landing/launch sites). Use presets below to jump around the system.</p>
 
         <div id="selection-display">
             Hover over a planet or the Sun!
@@ -65,6 +65,30 @@
     <button id="reset-view-button">
         Reset View
     </button>
+
+    <!-- Focus overlay: darkens scene when a body is focused (double-click) -->
+    <div id="focus-overlay" class="focus-overlay hidden" aria-hidden="true"></div>
+
+    <!-- Glassmorphic side panel (slides in from right when body focused) -->
+    <div id="body-panel" class="body-panel hidden" aria-hidden="true">
+        <div class="body-panel-inner">
+            <button type="button" class="body-panel-close" id="body-panel-close" aria-label="Close">×</button>
+            <header class="body-panel-header">
+                <h2 id="body-panel-title">—</h2>
+                <div id="body-panel-stats" class="body-panel-stats"></div>
+            </header>
+            <nav class="body-panel-tabs">
+                <button type="button" class="body-tab active" data-tab="overview">Overview</button>
+                <button type="button" class="body-tab" data-tab="missions">Missions</button>
+                <button type="button" class="body-tab" data-tab="sites">Sites</button>
+            </nav>
+            <div class="body-panel-content">
+                <div id="body-tab-overview" class="body-tab-pane active"></div>
+                <div id="body-tab-missions" class="body-tab-pane"></div>
+                <div id="body-tab-sites" class="body-tab-pane"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="detail-modal" class="detail-modal hidden" aria-hidden="true">
         <div class="detail-overlay"></div>

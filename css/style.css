@@ -265,6 +265,163 @@ input[type="checkbox"] {
     text-decoration: underline;
 }
 
+/* Focus overlay: darkens scene when body is focused (double-click) */
+.focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.focus-overlay:not(.hidden) {
+    pointer-events: auto;
+    opacity: 1;
+}
+.focus-overlay.hidden {
+    display: none;
+    opacity: 0;
+}
+
+/* Glassmorphic body panel (right side, mission-control style) */
+.body-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(380px, 92vw);
+    max-width: 100%;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+.body-panel:not(.hidden) {
+    pointer-events: auto;
+    transform: translateX(0);
+}
+.body-panel.hidden {
+    display: none;
+}
+
+.body-panel-inner {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+}
+
+.body-panel-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+    z-index: 2;
+    transition: background 0.15s, color 0.15s;
+}
+.body-panel-close:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: #f1f5f9;
+}
+
+.body-panel-header {
+    padding: 20px 20px 12px 20px;
+    padding-right: 48px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+.body-panel-header h2 {
+    margin: 0 0 8px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: 0.02em;
+}
+.body-panel-stats {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.body-panel-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 8px 12px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+.body-tab {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+.body-tab:hover {
+    color: #e2e8f0;
+    background: rgba(148, 163, 184, 0.1);
+}
+.body-tab.active {
+    color: #f1f5f9;
+    background: rgba(148, 163, 184, 0.15);
+}
+
+.body-panel-content {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 20px 24px;
+}
+.body-tab-pane {
+    display: none;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: #e2e8f0;
+}
+.body-tab-pane.active {
+    display: block;
+}
+.body-tab-pane h3 {
+    font-size: 0.95rem;
+    margin: 0 0 10px;
+    color: #cbd5e1;
+}
+.body-tab-pane ul {
+    margin: 0 0 12px;
+    padding-left: 1.2em;
+}
+.body-tab-pane .mission-item {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 8px;
+    border-left: 3px solid rgba(148, 163, 184, 0.4);
+}
+.body-panel.accent-moon .body-tab.active { background: rgba(148, 163, 184, 0.25); }
+.body-panel.accent-earth .body-tab.active { background: rgba(56, 189, 248, 0.2); }
+.body-panel.accent-earth .body-panel-inner { border-left-color: rgba(56, 189, 248, 0.35); }
+.body-panel.accent-mars .body-tab.active { background: rgba(248, 113, 113, 0.2); }
+.body-panel.accent-mars .body-panel-inner { border-left-color: rgba(248, 113, 113, 0.35); }
+.body-panel.accent-moon .body-panel-inner { border-left-color: rgba(148, 163, 184, 0.4); }
+
 /* Basic responsiveness */
 @media (max-width: 640px) {
     #info-panel {

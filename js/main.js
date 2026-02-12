@@ -615,11 +615,31 @@ const kuiperGroups = [];
 const labelPairs = [];
 const missionObjects = [];
 let moonMesh = null;
+let earthMesh = null;
+
+let focusedBody = null;
+let surfaceMarkersList = [];
+
+const ACCENT_BY_BODY = { Moon: 'accent-moon', Earth: 'accent-earth', Mars: 'accent-mars' };
+
+const LAUNCH_SITES = [
+    { name: 'Cape Canaveral / KSC', country: 'USA', lat: 28.5, lon: -80.6 },
+    { name: 'Baikonur Cosmodrome', country: 'Kazakhstan (Russia)', lat: 45.9, lon: 63.3 },
+    { name: 'Vandenberg SFB', country: 'USA', lat: 34.7, lon: -120.6 },
+    { name: 'Jiuquan', country: 'China', lat: 40.96, lon: 100.29 },
+    { name: 'Tanegashima', country: 'Japan', lat: 30.4, lon: 130.97 },
+    { name: 'Plesetsk', country: 'Russia', lat: 62.93, lon: 40.57 },
+    { name: 'Guiana Space Centre', country: 'France/ESA', lat: 5.24, lon: -52.77 },
+    { name: 'Satish Dhawan (Sriharikota)', country: 'India', lat: 13.72, lon: 80.23 }
+];
 
 const selectionDisplay = document.getElementById('selection-display');
 const detailModal = document.getElementById('detail-modal');
 const detailBody = document.getElementById('detail-body');
 const detailCloseBtn = document.getElementById('detail-close');
+const focusOverlay = document.getElementById('focus-overlay');
+const bodyPanel = document.getElementById('body-panel');
+const bodyPanelCloseBtn = document.getElementById('body-panel-close');
 const textureLoader = new THREE.TextureLoader(); 
 
 // Animation / controls state
@@ -1196,8 +1216,161 @@ function closeDetailModal() {
     detailModal.setAttribute('aria-hidden', 'true');
 }
 
+function getZoomDistanceForBody(radius) {
+    return Math.max(3, (radius || 0.5) * 5);
+}
+
+function latLonToSpherePosition(latDeg, lonDeg, radius) {
+    const phi = (90 - latDeg) * Math.PI / 180;
+    const theta = (lonDeg + 180) * Math.PI / 180;
+    const x = -radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.cos(phi);
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    return new THREE.Vector3(x, y, z);
+}
+
+function createSurfaceMarkers(bodyName, bodyMesh) {
+    clearSurfaceMarkers();
+    if (!bodyMesh) return;
+    const radius = bodyMesh.userData.radius || (bodyMesh.geometry ? bodyMesh.geometry.parameters.radius : 0.5);
+    const r = typeof radius === 'number' ? radius : 0.5;
+
+    if (bodyName === 'Moon' && moonMesh) {
+        const lunarMissions = MISSIONS.filter(m => m.target === 'Moon' && (m.latitudeDeg != null || m.longitudeDeg != null));
+        lunarMissions.forEach(mission => {
+            const lat = mission.latitudeDeg != null ? mission.latitudeDeg : 0;
+            const lon = mission.longitudeDeg != null ? mission.longitudeDeg : 0;
+            const pos = latLonToSpherePosition(lat, lon, r * 1.02);
+            const geom = new THREE.SphereGeometry(0.03, 12, 12);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0xffdd88,
+                transparent: true,
+                opacity: 0.95
+            });
+            const dot = new THREE.Mesh(geom, mat);
+            dot.position.copy(pos);
+            dot.userData = { name: mission.name, agency: mission.agency, year: mission.year, type: mission.type, id: mission.id };
+            bodyMesh.add(dot);
+            surfaceMarkersList.push(dot);
+        });
+    } else if (bodyName === 'Earth' && earthMesh) {
+        LAUNCH_SITES.forEach(site => {
+            const pos = latLonToSpherePosition(site.lat, site.lon, r * 1.01);
+            const geom = new THREE.SphereGeometry(0.025, 12, 12);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x60a5fa,
+                transparent: true,
+                opacity: 0.9
+            });
+            const dot = new THREE.Mesh(geom, mat);
+            dot.position.copy(pos);
+            dot.userData = { name: site.name, country: site.country, type: 'Launch site' };
+            bodyMesh.add(dot);
+            surfaceMarkersList.push(dot);
+        });
+    }
+}
+
+function clearSurfaceMarkers() {
+    surfaceMarkersList.forEach(m => {
+        if (m.parent) m.parent.remove(m);
+    });
+    surfaceMarkersList = [];
+}
+
+function populateBodyPanel(data) {
+    if (!bodyPanel) return;
+    const titleEl = document.getElementById('body-panel-title');
+    const statsEl = document.getElementById('body-panel-stats');
+    const overviewEl = document.getElementById('body-tab-overview');
+    const missionsEl = document.getElementById('body-tab-missions');
+    const sitesEl = document.getElementById('body-tab-sites');
+    if (!titleEl || !statsEl || !overviewEl) return;
+
+    titleEl.textContent = data.name || '—';
+    const radiusKm = data.radiusKm;
+    const period = data.orbitalPeriodDays || data.orbitalPeriodYears;
+    let stats = '';
+    if (radiusKm) stats += `Radius: ${radiusKm.toLocaleString()} km`;
+    if (period) stats += (stats ? ' · ' : '') + `Orbital period: ${data.orbitalPeriodYears ? data.orbitalPeriodYears + ' yr' : data.orbitalPeriodDays + ' d'}`;
+    if (data.parentName && data.type === 'Moon') stats += (stats ? ' · ' : '') + `Orbits: ${data.parentName}`;
+    statsEl.textContent = stats || '—';
+
+    overviewEl.innerHTML = buildDetailContent(data);
+
+    const bodyName = data.name;
+    const missionsForBody = MISSIONS.filter(m => m.target === bodyName || m.attachTo === bodyName);
+    if (missionsEl) {
+        if (missionsForBody.length) {
+            missionsEl.innerHTML = missionsForBody.map(m => `
+                <div class="mission-item">
+                    <strong>${m.name}</strong> · ${m.agency || '—'} (${m.year || '—'})<br>
+                    <span style="color:#94a3b8">${m.type}</span> · ${m.status || ''}
+                </div>
+            `).join('');
+        } else {
+            missionsEl.innerHTML = '<p style="color:#94a3b8">No missions in database for this body.</p>';
+        }
+    }
+
+    if (sitesEl) {
+        if (bodyName === 'Moon') {
+            const lunar = MISSIONS.filter(m => m.target === 'Moon');
+            sitesEl.innerHTML = '<h3>Landing / impact sites</h3><ul>' + lunar.map(m =>
+                `<li><strong>${m.name}</strong> (${m.agency}, ${m.year}) — ${m.type}</li>`
+            ).join('') + '</ul>';
+        } else if (bodyName === 'Earth') {
+            sitesEl.innerHTML = '<h3>Launch sites</h3><ul>' + LAUNCH_SITES.map(s =>
+                `<li><strong>${s.name}</strong> — ${s.country}</li>`
+            ).join('') + '</ul>';
+        } else {
+            sitesEl.innerHTML = '<p style="color:#94a3b8">Surface sites available for Moon and Earth.</p>';
+        }
+    }
+
+    const sitesTab = bodyPanel.querySelector('.body-tab[data-tab="sites"]');
+    if (sitesTab) {
+        sitesTab.textContent = bodyName === 'Moon' ? 'Landing Sites' : bodyName === 'Earth' ? 'Launch Sites' : 'Sites';
+    }
+    bodyPanel.classList.remove('accent-moon', 'accent-earth', 'accent-mars');
+    const accent = ACCENT_BY_BODY[bodyName];
+    if (accent) bodyPanel.classList.add(accent);
+}
+
+function openBodyPanel(mesh) {
+    if (!mesh || !mesh.userData) return;
+    const data = mesh.userData;
+    focusedBody = mesh;
+    if (focusOverlay) { focusOverlay.classList.remove('hidden'); }
+    if (bodyPanel) {
+        bodyPanel.classList.remove('hidden');
+        populateBodyPanel(data);
+        const tabs = bodyPanel.querySelectorAll('.body-tab');
+        const panes = bodyPanel.querySelectorAll('.body-tab-pane');
+        tabs.forEach((t, i) => {
+            t.classList.toggle('active', i === 0);
+            if (panes[i]) panes[i].classList.toggle('active', i === 0);
+        });
+    }
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    const dist = getZoomDistanceForBody(data.radius);
+    const dir = new THREE.Vector3().subVectors(camera.position, worldPos).normalize();
+    const targetPos = worldPos.clone().add(dir.multiplyScalar(dist));
+    startCameraTransition(targetPos, worldPos.clone(), 1200);
+    createSurfaceMarkers(data.name, mesh);
+}
+
+function closeBodyPanel() {
+    focusedBody = null;
+    clearSurfaceMarkers();
+    if (focusOverlay) focusOverlay.classList.add('hidden');
+    if (bodyPanel) bodyPanel.classList.add('hidden');
+}
+
 // Function to reset the view
 function resetView() {
+    closeBodyPanel();
     controls.reset(); 
     camera.position.copy(INITIAL_CAMERA_POSITION);
     controls.target.copy(INITIAL_CONTROLS_TARGET);
@@ -1248,6 +1421,8 @@ PLANETS.forEach(planetData => {
         orbitSpeed: planetData.orbitSpeed, 
         selfRotateSpeed: planetData.selfRotateSpeed
     });
+
+    if (planetData.name === 'Earth') earthMesh = planet;
 
     // 6. Label for the planet
     const planetLabel = createLabelSprite(planetData.name);
@@ -1479,7 +1654,7 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Double-click: open detail popup beside the selected object (same style as modal, positioned next to dot)
+// Double-click: celestial body → zoom + glassmorphic panel + surface markers; mission → popup beside
 window.addEventListener('dblclick', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -1488,14 +1663,19 @@ window.addEventListener('dblclick', (event) => {
     if (intersects.length > 0) {
         const obj = intersects[0].object;
         const data = obj.userData;
-        const content = buildDetailContent(data);
-        if (content) {
-            const worldPos = new THREE.Vector3();
-            obj.getWorldPosition(worldPos);
-            worldPos.project(camera);
-            const screenX = (worldPos.x + 1) * 0.5 * window.innerWidth;
-            const screenY = (1 - worldPos.y) * 0.5 * window.innerHeight;
-            openDetailModal(content, screenX, screenY);
+        const isCelestial = data && data.type && data.type !== 'Mission';
+        if (isCelestial) {
+            openBodyPanel(obj);
+        } else {
+            const content = buildDetailContent(data);
+            if (content) {
+                const worldPos = new THREE.Vector3();
+                obj.getWorldPosition(worldPos);
+                worldPos.project(camera);
+                const screenX = (worldPos.x + 1) * 0.5 * window.innerWidth;
+                const screenY = (1 - worldPos.y) * 0.5 * window.innerHeight;
+                openDetailModal(content, screenX, screenY);
+            }
         }
     }
 });
@@ -1505,6 +1685,24 @@ if (detailCloseBtn) detailCloseBtn.addEventListener('click', closeDetailModal);
 if (detailModal) {
     const overlay = detailModal.querySelector('.detail-overlay');
     if (overlay) overlay.addEventListener('click', closeDetailModal);
+}
+
+// Body panel close and overlay click
+if (bodyPanelCloseBtn) bodyPanelCloseBtn.addEventListener('click', closeBodyPanel);
+if (focusOverlay) focusOverlay.addEventListener('click', closeBodyPanel);
+
+// Body panel tabs
+if (bodyPanel) {
+    bodyPanel.querySelectorAll('.body-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-tab');
+            bodyPanel.querySelectorAll('.body-tab').forEach(t => t.classList.remove('active'));
+            bodyPanel.querySelectorAll('.body-tab-pane').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const pane = document.getElementById('body-tab-' + tabId);
+            if (pane) pane.classList.add('active');
+        });
+    });
 }
 
 // Button click listener bound to the function
