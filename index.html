@@ -10,7 +10,7 @@
     <div id="info-panel">
         <h1>Solar System 3D Explorer</h1>
         <p>Click and drag to orbit. Scroll to zoom. Right-click or Ctrl+drag to pan.</p>
-        <p>Hover to preview, click to lock a body. Use presets below to jump around the system.</p>
+        <p>Hover to preview, click to lock. <strong>Double-click</strong> any body to open a detail view. Use presets below to jump around the system.</p>
 
         <div id="selection-display">
             Hover over a planet or the Sun!
@@ -65,6 +65,14 @@
     <button id="reset-view-button">
         Reset View
     </button>
+
+    <div id="detail-modal" class="detail-modal hidden" aria-hidden="true">
+        <div class="detail-overlay"></div>
+        <div class="detail-content">
+            <button type="button" class="detail-close" id="detail-close" aria-label="Close">×</button>
+            <div id="detail-body"></div>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

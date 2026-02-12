@@ -151,6 +151,90 @@ input[type="checkbox"] {
     background: rgba(15, 23, 42, 1);
 }
 
+/* Detail modal (double-click to study) */
+.detail-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.detail-modal.hidden {
+    display: none;
+}
+
+.detail-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    cursor: pointer;
+}
+
+.detail-content {
+    position: relative;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow: auto;
+    background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    padding: 20px 24px 24px;
+    color: #e5e7eb;
+}
+
+.detail-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.detail-close:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: #f1f5f9;
+}
+
+#detail-body {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+#detail-body h2 {
+    margin: 0 0 10px;
+    font-size: 1.35rem;
+    color: #f1f5f9;
+}
+
+#detail-body .detail-type {
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+#detail-body .detail-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+#detail-body .detail-section strong {
+    color: #cbd5e1;
+}
+
 /* Basic responsiveness */
 @media (max-width: 640px) {
     #info-panel {

@@ -561,6 +561,9 @@ const missionObjects = [];
 let moonMesh = null;
 
 const selectionDisplay = document.getElementById('selection-display');
+const detailModal = document.getElementById('detail-modal');
+const detailBody = document.getElementById('detail-body');
+const detailCloseBtn = document.getElementById('detail-close');
 const textureLoader = new THREE.TextureLoader(); 
 
 // Animation / controls state
@@ -844,13 +847,153 @@ function displayBodyInfo(data) {
     selectionDisplay.innerHTML = infoText;
 }
 
+// Program key for mission icon style (like the lunar landings map: USSR, China, USA Apollo, USA Surveyor, etc.)
+function getMissionProgram(mission) {
+    const a = (mission.agency || '').toLowerCase();
+    const n = (mission.name || '').toLowerCase();
+    if (a.includes('soviet') || a.includes('ussr') || n.includes('luna') || n.includes('sputnik') || n.includes('venera')) return 'ussr';
+    if (a.includes('china') || a.includes('cnsa') || n.includes('chang')) return 'china';
+    if (n.includes('surveyor')) return 'usa_surveyor';
+    if (n.includes('apollo')) return 'usa_apollo';
+    if (a.includes('nasa') || a.includes('usa')) return 'usa_other';
+    return 'other';
+}
+
+// Canvas texture for program-specific mission icon (flag-style like lunar landings map)
+function createMissionIconTexture(program) {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 2;
+
+    if (program === 'ussr') {
+        ctx.fillStyle = '#c41e3a';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fcd116';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#fcd116';
+        ctx.strokeStyle = '#fcd116';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - 12, cy + 10);
+        ctx.lineTo(cx + 12, cy - 8);
+        ctx.moveTo(cx - 8, cy - 12);
+        ctx.lineTo(cx + 10, cy + 12);
+        ctx.stroke();
+    } else if (program === 'china') {
+        ctx.fillStyle = '#de2910';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffde00';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#ffde00';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 14);
+        for (let i = 1; i <= 5; i++) {
+            const a = (i * 2 * Math.PI / 5) - Math.PI / 2;
+            ctx.lineTo(cx + 14 * Math.cos(a), cy + 14 * Math.sin(a));
+        }
+        ctx.closePath();
+        ctx.fill();
+    } else if (program === 'usa_apollo') {
+        ctx.fillStyle = '#b22234';
+        ctx.fillRect(0, 0, size, size);
+        const stripeH = size / 13;
+        for (let i = 0; i < 13; i++) {
+            ctx.fillStyle = (i % 2 === 0) ? '#b22234' : '#fff';
+            ctx.fillRect(0, i * stripeH, size, stripeH);
+        }
+        ctx.fillStyle = '#3c3b6e';
+        ctx.fillRect(0, 0, size * 0.4, stripeH * 7);
+        ctx.fillStyle = '#fff';
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 6; col++) {
+                ctx.beginPath();
+                ctx.arc(8 + col * 5.5, 6 + row * 5.5, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 5; col++) {
+                ctx.beginPath();
+                ctx.arc(10.5 + col * 5.5, 8.5 + row * 5.5, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    } else if (program === 'usa_surveyor') {
+        ctx.fillStyle = '#002868';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r);
+        for (let i = 1; i <= 3; i++) {
+            const a = (i * 2 * Math.PI / 3) - Math.PI / 2;
+            ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#bf0a30';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (program === 'usa_other') {
+        ctx.fillStyle = '#0b3d91';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('NASA', cx, cy);
+    } else {
+        ctx.fillStyle = '#475569';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('◆', cx, cy);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+}
+
 // Create mission markers and attach them to appropriate bodies or free space
 function createMissionMarkers() {
     MISSIONS.forEach(mission => {
-        const size = 0.15;
-        const geometry = new THREE.SphereGeometry(size, 12, 12);
-        const material = new THREE.MeshStandardMaterial({ color: 0xffc857 });
-        const marker = new THREE.Mesh(geometry, material);
+        const program = getMissionProgram(mission);
+        const iconSize = 0.5;
+        const map = createMissionIconTexture(program);
+        const material = new THREE.SpriteMaterial({
+            map: map,
+            transparent: true,
+            depthWrite: false
+        });
+        const marker = new THREE.Sprite(material);
+        marker.scale.set(iconSize, iconSize, 1);
 
         let parentGroup = null;
         if (mission.attachTo) {
@@ -929,6 +1072,45 @@ function createMissionMarkers() {
     });
 }
 
+
+// Build HTML for the detail modal (study view)
+function buildDetailContent(data) {
+    if (!data) return '';
+    const name = data.name || 'Unknown';
+    const typeLabel = data.type || 'Body';
+    let html = `<h2>${name}</h2><p class="detail-type">${typeLabel}</p>`;
+    if (data.agency) html += `<p><strong>Agency:</strong> ${data.agency}</p>`;
+    if (data.year || data.launchYear) html += `<p><strong>Launch year:</strong> ${data.year || data.launchYear}</p>`;
+    if (data.status) html += `<p><strong>Status:</strong> ${data.status}</p>`;
+    if (data.info) html += `<div class="detail-section">${data.info}</div>`;
+    if (data.radiusKm) html += `<p><strong>Radius:</strong> ${data.radiusKm.toLocaleString()} km</p>`;
+    if (data.orbitalPeriodDays || data.orbitalPeriodYears) {
+        const parts = [];
+        if (data.orbitalPeriodDays) parts.push(`${data.orbitalPeriodDays.toLocaleString()} days`);
+        if (data.orbitalPeriodYears) parts.push(`${data.orbitalPeriodYears} years`);
+        html += `<p><strong>Orbital period:</strong> ${parts.join(' / ')}</p>`;
+    }
+    if (data.distanceAU !== undefined && data.type !== 'Star' && !data.missionType) {
+        const { sunDistText, earthDistText } = calculateDistanceInfo(data);
+        html += `<p><strong>Distance from Sun:</strong> ${sunDistText}</p>`;
+        html += `<p><strong>Distance from Earth:</strong> ${earthDistText}</p>`;
+    }
+    if (data.parentName && data.type === 'Moon') html += `<p><strong>Orbits:</strong> ${data.parentName}</p>`;
+    return html;
+}
+
+function openDetailModal(content) {
+    if (!detailModal || !detailBody) return;
+    detailBody.innerHTML = content;
+    detailModal.classList.remove('hidden');
+    detailModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeDetailModal() {
+    if (!detailModal) return;
+    detailModal.classList.add('hidden');
+    detailModal.setAttribute('aria-hidden', 'true');
+}
 
 // Function to reset the view
 function resetView() {
@@ -1212,6 +1394,26 @@ window.addEventListener('click', (event) => {
         selectionDisplay.innerHTML = 'Hover over a planet or the Sun!';
     }
 });
+
+// Double-click: open detail modal for study
+window.addEventListener('dblclick', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(selectableObjects);
+    if (intersects.length > 0) {
+        const data = intersects[0].object.userData;
+        const content = buildDetailContent(data);
+        if (content) openDetailModal(content);
+    }
+});
+
+// Detail modal close
+if (detailCloseBtn) detailCloseBtn.addEventListener('click', closeDetailModal);
+if (detailModal) {
+    const overlay = detailModal.querySelector('.detail-overlay');
+    if (overlay) overlay.addEventListener('click', closeDetailModal);
+}
 
 // Button click listener bound to the function
 document.getElementById('reset-view-button').addEventListener('click', resetView);
